@@ -15,7 +15,7 @@ const firebaseConfig = {
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  throw new Error('❌ Firebase configuration is missing! Check your .env file.');
+  throw new Error('Firebase configuration is missing! Check your .env file.');
 }
 
 // Initialize Firebase
