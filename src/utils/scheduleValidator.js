@@ -169,8 +169,7 @@ export const formatScheduleStatus = (schedule) => {
     return {
       status: 'closed',
       message: `Sudah ditutup (${tanggalTutup.toLocaleDateString('id-ID')})`,
-      color: 'danger',
-      icon: '⏰'
+      color: 'danger'    
     };
   } else {
     const remainingDays = Math.ceil((tanggalTutup - now) / (1000 * 60 * 60 * 24));

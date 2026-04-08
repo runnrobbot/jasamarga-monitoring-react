@@ -182,11 +182,16 @@ const PICDashboard = () => {
 
     const totalP3DN          = totalTKDN + totalPDN;
     const belumRealisasi      = Math.max(0, totalKomitmenKeseluruhan - totalRealisasi);
-    const persentaseRealisasi = totalKomitmenKeseluruhan > 0 ? ((totalRealisasi / totalKomitmenKeseluruhan) * 100).toFixed(2) : 0;
-    const persentaseTKDN      = totalNilaiKontrak > 0 ? ((totalTKDN  / totalNilaiKontrak) * 100).toFixed(2) : 0;
-    const persentasePDN       = totalNilaiKontrak > 0 ? ((totalPDN   / totalNilaiKontrak) * 100).toFixed(2) : 0;
-    const persentaseImpor     = totalNilaiKontrak > 0 ? ((totalImpor / totalNilaiKontrak) * 100).toFixed(2) : 0;
-    const persentaseP3DN      = totalNilaiKontrak > 0 ? ((totalP3DN  / totalNilaiKontrak) * 100).toFixed(2) : 0;
+    const persentaseRealisasi = totalKomitmenKeseluruhan > 0 
+      ? Math.min(((totalRealisasi / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
+    const persentaseTKDN = totalNilaiKontrak > 0 
+      ? Math.min(((totalTKDN / totalNilaiKontrak) * 100), 100).toFixed(2) : 0;
+    const persentasePDN = totalNilaiKontrak > 0 
+      ? Math.min(((totalPDN / totalNilaiKontrak) * 100), 100).toFixed(2) : 0;
+    const persentaseImpor = totalNilaiKontrak > 0 
+      ? Math.min(((totalImpor / totalNilaiKontrak) * 100), 100).toFixed(2) : 0;
+    const persentaseP3DN = totalNilaiKontrak > 0 
+      ? Math.min(((totalP3DN / totalNilaiKontrak) * 100), 100).toFixed(2) : 0;
 
     return {
       komitmen: totalKomitmen, komitmenKeseluruhan: totalKomitmenKeseluruhan,
