@@ -1,0 +1,231 @@
+/* ========================================
+   SIDEBAR - RESPONSIVE LAYOUT
+   ======================================== */
+
+.sidebar {
+  position: fixed;
+  top: 56px;
+  left: 0;
+  bottom: 0;
+  width: 250px;
+  z-index: 100;
+  padding: 0;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  transition: transform 0.3s ease;
+}
+
+.sidebar-sticky {
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 56px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ========================================
+   SIDEBAR LINKS
+   ======================================== */
+
+.sidebar-link {
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-left-color: #0d6efd;
+  transform: translateX(2px);
+}
+
+.sidebar-link.active {
+  background: rgba(13, 110, 253, 0.2);
+  border-left-color: #0d6efd;
+}
+
+.sidebar-link svg {
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-link:hover svg,
+.sidebar-link.active svg {
+  opacity: 1;
+}
+
+/* ========================================
+   SIDEBAR FOOTER (AP Info)
+   ======================================== */
+
+.sidebar-footer {
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding: 1rem !important;
+}
+
+/* ========================================
+   SCROLLBAR
+   ======================================== */
+
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ========================================
+   RESPONSIVE BREAKPOINTS
+   ======================================== */
+
+/* Large Desktop (≥1920px) */
+@media (min-width: 1920px) {
+  .sidebar {
+    width: 280px;
+  }
+}
+
+/* Desktop (≥1200px) */
+@media (min-width: 1200px) and (max-width: 1919px) {
+  .sidebar {
+    width: 250px;
+  }
+}
+
+/* Laptop (992px - 1199px) */
+@media (min-width: 992px) and (max-width: 1199px) {
+  .sidebar {
+    width: 220px;
+  }
+  
+  .sidebar-link {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.9rem;
+  }
+  
+  .sidebar-link svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+/* Tablet (768px - 991px) - Collapsible Sidebar */
+@media (max-width: 991px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: 250px;
+    z-index: 1050;
+  }
+  
+  .sidebar.show {
+    transform: translateX(0);
+  }
+  
+  /* Overlay when sidebar is open */
+  .sidebar-overlay {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+    display: none;
+  }
+  
+  .sidebar-overlay.show {
+    display: block;
+  }
+}
+
+/* Mobile (≤767px) - Full Width Sidebar */
+@media (max-width: 767px) {
+  .sidebar {
+    width: 100%;
+    max-width: 300px;
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.show {
+    transform: translateX(0);
+  }
+  
+  .sidebar-link {
+    padding: 1rem 1.5rem !important;
+    font-size: 1rem;
+  }
+  
+  .sidebar-link svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  
+  .sidebar-footer {
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(180deg, transparent 0%, #1a1a2e 50%);
+    padding-top: 1.5rem !important;
+  }
+}
+
+/* Small Mobile (≤480px) */
+@media (max-width: 480px) {
+  .sidebar {
+    max-width: 280px;
+  }
+  
+  .sidebar-link {
+    padding: 0.875rem 1.25rem !important;
+    font-size: 0.9rem;
+  }
+  
+  .sidebar-link svg {
+    width: 18px !important;
+    height: 18px !important;
+    margin-right: 0.75rem !important;
+  }
+}
+
+/* ========================================
+   PRINT STYLES
+   ======================================== */
+
+@media print {
+  .sidebar {
+    display: none !important;
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+
+/* Focus visible for keyboard navigation */
+.sidebar-link:focus-visible {
+  outline: 2px solid #0d6efd;
+  outline-offset: -2px;
+}
+
+/* Reduce motion for users with motion sensitivity */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sidebar-link,
+  .sidebar-link svg {
+    transition: none !important;
+  }
+}

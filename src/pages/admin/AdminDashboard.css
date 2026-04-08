@@ -1,0 +1,24 @@
+.main-content {
+  margin-left: 250px;
+  margin-top: 56px;
+  padding: 20px;
+  flex: 1;
+  background-color: #f8f9fa;
+  min-height: calc(100vh - 56px);
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+  }
+}
+
+/* Animation for cards */
+.card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}

@@ -1,0 +1,40 @@
+/* PIC Dashboard Specific Styles */
+
+.pic-dashboard {
+  background-color: #f8f9fa;
+}
+
+.pic-info-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.pic-info-banner h4 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.pic-info-banner p {
+  margin: 0.5rem 0 0 0;
+  opacity: 0.9;
+}
+
+.stat-card-pic {
+  transition: transform 0.2s;
+}
+
+.stat-card-pic:hover {
+  transform: translateY(-5px);
+}
+
+/* Custom badge for PIC */
+.badge-pic-ap {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
