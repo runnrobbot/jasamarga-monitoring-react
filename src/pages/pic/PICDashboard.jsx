@@ -23,28 +23,28 @@ import p3dnIcon from '../../../public/icon/p3dn.png';
 import importIcon from '../../../public/icon/import.png';
 
 const QUARTERS = [
-  { value: 1, label: 'Triwulan I (Jan–Mar)',   months: [1, 2, 3] },
-  { value: 2, label: 'Triwulan II (Apr–Jun)',  months: [4, 5, 6] },
+  { value: 1, label: 'Triwulan I (Jan–Mar)', months: [1, 2, 3] },
+  { value: 2, label: 'Triwulan II (Apr–Jun)', months: [4, 5, 6] },
   { value: 3, label: 'Triwulan III (Jul–Sep)', months: [7, 8, 9] },
-  { value: 4, label: 'Triwulan IV (Okt–Des)',  months: [10, 11, 12] }
+  { value: 4, label: 'Triwulan IV (Okt–Des)', months: [10, 11, 12] }
 ];
 
 const MONTHS = [
-  { value: 1,  label: 'Januari'   }, { value: 2,  label: 'Februari'  },
-  { value: 3,  label: 'Maret'     }, { value: 4,  label: 'April'     },
-  { value: 5,  label: 'Mei'       }, { value: 6,  label: 'Juni'      },
-  { value: 7,  label: 'Juli'      }, { value: 8,  label: 'Agustus'   },
-  { value: 9,  label: 'September' }, { value: 10, label: 'Oktober'   },
-  { value: 11, label: 'November'  }, { value: 12, label: 'Desember'  }
+  { value: 1, label: 'Januari' }, { value: 2, label: 'Februari' },
+  { value: 3, label: 'Maret' }, { value: 4, label: 'April' },
+  { value: 5, label: 'Mei' }, { value: 6, label: 'Juni' },
+  { value: 7, label: 'Juli' }, { value: 8, label: 'Agustus' },
+  { value: 9, label: 'September' }, { value: 10, label: 'Oktober' },
+  { value: 11, label: 'November' }, { value: 12, label: 'Desember' }
 ];
 
 const PICDashboard = () => {
   const { user } = useAuth();
 
-  const [selectedPeriod,   setSelectedPeriod]   = useState('all');
-  const [selectedMonth,    setSelectedMonth]    = useState(new Date().getMonth() + 1);
-  const [selectedYear,     setSelectedYear]     = useState(new Date().getFullYear());
-  const [selectedQuarter,  setSelectedQuarter]  = useState(Math.ceil((new Date().getMonth() + 1) / 3));
+  const [selectedPeriod, setSelectedPeriod] = useState('all');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedQuarter, setSelectedQuarter] = useState(Math.ceil((new Date().getMonth() + 1) / 3));
   const [filterJenisPaket, setFilterJenisPaket] = useState('all');
 
   const [rawData, setRawData] = useState([]);
@@ -87,9 +87,9 @@ const PICDashboard = () => {
     const dY = parseInt(det.tahunRealisasi) || fbYear;
     const dM = parseInt(det.bulanRealisasi);
     if (!dM) return false;
-    if (selectedPeriod === 'monthly')   return dY === selectedYear && dM === selectedMonth;
+    if (selectedPeriod === 'monthly') return dY === selectedYear && dM === selectedMonth;
     if (selectedPeriod === 'quarterly') return dY === selectedYear && qMonths.includes(dM);
-    if (selectedPeriod === 'yearly')    return dY === selectedYear;
+    if (selectedPeriod === 'yearly') return dY === selectedYear;
     return false;
   };
 
@@ -111,7 +111,7 @@ const PICDashboard = () => {
 
     if (selectedPeriod !== 'all') {
       list = list.filter(item => {
-        const fbYear  = getFallbackYear(item);
+        const fbYear = getFallbackYear(item);
         const fbMonth = (() => {
           if (!item.createdAt) return null;
           try {
@@ -124,9 +124,9 @@ const PICDashboard = () => {
           return item.realisasiDetail.some(det => isDetInPeriod(det, fbYear));
 
         if (!fbYear) return selectedPeriod === 'yearly';
-        if (selectedPeriod === 'monthly')   return fbYear === selectedYear && fbMonth === selectedMonth;
+        if (selectedPeriod === 'monthly') return fbYear === selectedYear && fbMonth === selectedMonth;
         if (selectedPeriod === 'quarterly') return fbYear === selectedYear && qMonths.includes(fbMonth);
-        if (selectedPeriod === 'yearly')    return fbYear === selectedYear;
+        if (selectedPeriod === 'yearly') return fbYear === selectedYear;
         return false;
       });
     }
@@ -139,9 +139,9 @@ const PICDashboard = () => {
     const dataByJenis = {}, dataByMetode = {};
 
     list.forEach(item => {
-      totalKomitmen            += Number(item.nilaiKomitmen) || 0;
+      totalKomitmen += Number(item.nilaiKomitmen) || 0;
       totalKomitmenKeseluruhan += Number(item.komitmenKeseluruhan) || Number(item.nilaiKomitmen) || 0;
-      totalNilaiKontrak        += Number(item.nilaiKontrakKeseluruhan) || 0;
+      totalNilaiKontrak += Number(item.nilaiKontrakKeseluruhan) || 0;
 
       const rp = selectedPeriod === 'all'
         ? Number(item.realisasi) || 0
@@ -149,13 +149,13 @@ const PICDashboard = () => {
       totalRealisasi += rp;
 
       // Akumulasi nilai komitmen awal (nilaiKeseluruhan*) — selalu dari data mentah
-      komitmenTKDN  += Number(item.nilaiKeseluruhanTKDN)    || 0;
-      komitmenPDN   += Number(item.nilaiKeseluruhanPDN)     || 0;
-      komitmenImpor += Number(item.nilaiKeseluruhanImport)  || 0;
+      komitmenTKDN += Number(item.nilaiKeseluruhanTKDN) || 0;
+      komitmenPDN += Number(item.nilaiKeseluruhanPDN) || 0;
+      komitmenImpor += Number(item.nilaiKeseluruhanImport) || 0;
 
       // Akumulasi global dulu (dipakai jika selectedPeriod === 'all')
-      totalTKDN  += Number(item.nilaiKeseluruhanTKDN) || Number(item.nilaiTKDN)    || 0;
-      totalPDN   += Number(item.nilaiKeseluruhanPDN)  || Number(item.nilaiPDN)     || 0;
+      totalTKDN += Number(item.nilaiKeseluruhanTKDN) || Number(item.nilaiTKDN) || 0;
+      totalPDN += Number(item.nilaiKeseluruhanPDN) || Number(item.nilaiPDN) || 0;
       totalImpor += Number(item.nilaiKeseluruhanImport) || Number(item.nilaiImpor) || 0;
 
       const jenis = item.jenisPengadaan || 'Lainnya';
@@ -172,29 +172,29 @@ const PICDashboard = () => {
     // ── Saat filter periode aktif: scale TKDN/PDN/Import proporsional ────────
     //   TKDN_periode = Σ (realisasiPeriode / realisasiTotal) × TKDN_item
     if (selectedPeriod !== 'all') {
-      totalTKDN  = 0;
-      totalPDN   = 0;
+      totalTKDN = 0;
+      totalPDN = 0;
       totalImpor = 0;
 
       list.forEach(item => {
-        const realisasiTotal   = Number(item.realisasi) || 0;
+        const realisasiTotal = Number(item.realisasi) || 0;
         const realisasiPeriode = getRealisasiPeriode(item);
         const ratio = realisasiTotal > 0 ? realisasiPeriode / realisasiTotal : 1;
 
-        totalTKDN  += (Number(item.nilaiKeseluruhanTKDN)   || Number(item.nilaiTKDN)   || 0) * ratio;
-        totalPDN   += (Number(item.nilaiKeseluruhanPDN)    || Number(item.nilaiPDN)    || 0) * ratio;
-        totalImpor += (Number(item.nilaiKeseluruhanImport) || Number(item.nilaiImpor)  || 0) * ratio;
+        totalTKDN += (Number(item.nilaiKeseluruhanTKDN) || Number(item.nilaiTKDN) || 0) * ratio;
+        totalPDN += (Number(item.nilaiKeseluruhanPDN) || Number(item.nilaiPDN) || 0) * ratio;
+        totalImpor += (Number(item.nilaiKeseluruhanImport) || Number(item.nilaiImpor) || 0) * ratio;
       });
     }
 
-    const komitmenP3DN        = komitmenTKDN + komitmenPDN;
-    const totalP3DN           = totalTKDN + totalPDN;
-    const belumRealisasi      = Math.max(0, totalKomitmenKeseluruhan - totalRealisasi);
+    const komitmenP3DN = komitmenTKDN + komitmenPDN;
+    const totalP3DN = totalTKDN + totalPDN;
+    const belumRealisasi = Math.max(0, totalKomitmenKeseluruhan - totalRealisasi);
     const persentaseRealisasi = totalKomitmenKeseluruhan > 0 ? ((totalRealisasi / totalKomitmenKeseluruhan) * 100).toFixed(2) : 0;
-    const persentaseTKDN      = totalNilaiKontrak > 0 ? ((totalTKDN  / totalNilaiKontrak) * 100).toFixed(2) : 0;
-    const persentasePDN       = totalNilaiKontrak > 0 ? ((totalPDN   / totalNilaiKontrak) * 100).toFixed(2) : 0;
-    const persentaseImpor     = totalNilaiKontrak > 0 ? ((totalImpor / totalNilaiKontrak) * 100).toFixed(2) : 0;
-    const persentaseP3DN      = totalNilaiKontrak > 0 ? ((totalP3DN  / totalNilaiKontrak) * 100).toFixed(2) : 0;
+    const persentaseTKDN = totalNilaiKontrak > 0 ? ((totalTKDN / totalNilaiKontrak) * 100).toFixed(2) : 0;
+    const persentasePDN = totalNilaiKontrak > 0 ? ((totalPDN / totalNilaiKontrak) * 100).toFixed(2) : 0;
+    const persentaseImpor = totalNilaiKontrak > 0 ? ((totalImpor / totalNilaiKontrak) * 100).toFixed(2) : 0;
+    const persentaseP3DN = totalNilaiKontrak > 0 ? ((totalP3DN / totalNilaiKontrak) * 100).toFixed(2) : 0;
 
     return {
       komitmen: totalKomitmen, komitmenKeseluruhan: totalKomitmenKeseluruhan,
@@ -211,11 +211,11 @@ const PICDashboard = () => {
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
 
   const getPeriodSubtitle = () => {
-    const mName  = MONTHS.find(m => m.value === selectedMonth)?.label || '';
+    const mName = MONTHS.find(m => m.value === selectedMonth)?.label || '';
     const qLabel = QUARTERS.find(q => q.value === selectedQuarter)?.label || '';
-    if (selectedPeriod === 'monthly')   return `${mName} ${selectedYear}`;
+    if (selectedPeriod === 'monthly') return `${mName} ${selectedYear}`;
     if (selectedPeriod === 'quarterly') return `${qLabel} ${selectedYear}`;
-    if (selectedPeriod === 'yearly')    return `Tahun ${selectedYear}`;
+    if (selectedPeriod === 'yearly') return `Tahun ${selectedYear}`;
     return String(selectedYear);
   };
 
@@ -264,10 +264,10 @@ const PICDashboard = () => {
                     <Form.Label className="small fw-bold"><FaCalendarAlt className="me-2" />Periode</Form.Label>
                     <ButtonGroup className="w-100">
                       {[
-                        { key: 'all',       label: 'Semua'    },
-                        { key: 'monthly',   label: 'Bulanan'  },
+                        { key: 'all', label: 'Semua' },
+                        { key: 'monthly', label: 'Bulanan' },
                         { key: 'quarterly', label: 'Triwulan' },
-                        { key: 'yearly',    label: 'Tahunan'  }
+                        { key: 'yearly', label: 'Tahunan' }
                       ].map(p => (
                         <Button key={p.key} size="sm"
                           variant={selectedPeriod === p.key ? 'primary' : 'outline-primary'}
@@ -367,11 +367,11 @@ const PICDashboard = () => {
             <Row className="g-4 mb-4">
               <Col xs={12} lg={6}>
                 <ChartCard title="Breakdown Per Jenis Pengadaan" type="pie" subtitle="Jumlah paket per jenis pengadaan"
-                  data={{ labels: Object.keys(dashboardData.dataByJenis), datasets: [{ data: Object.values(dashboardData.dataByJenis).map(i => i.count), backgroundColor: ['#007bff','#28a745','#ffc107','#dc3545','#17a2b8','#6c757d','#e83e8c','#fd7e14'] }] }} />
+                  data={{ labels: Object.keys(dashboardData.dataByJenis), datasets: [{ data: Object.values(dashboardData.dataByJenis).map(i => i.count), backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6c757d', '#e83e8c', '#fd7e14'] }] }} />
               </Col>
               <Col xs={12} lg={6}>
                 <ChartCard title="Breakdown Per Metode Pemilihan" type="pie" subtitle="Jumlah paket per metode pemilihan"
-                  data={{ labels: Object.keys(dashboardData.dataByMetode), datasets: [{ data: Object.values(dashboardData.dataByMetode).map(i => i.count), backgroundColor: ['#6f42c1','#20c997','#fd7e14','#e83e8c','#6c757d','#17a2b8','#ffc107','#dc3545'] }] }} />
+                  data={{ labels: Object.keys(dashboardData.dataByMetode), datasets: [{ data: Object.values(dashboardData.dataByMetode).map(i => i.count), backgroundColor: ['#6f42c1', '#20c997', '#fd7e14', '#e83e8c', '#6c757d', '#17a2b8', '#ffc107', '#dc3545'] }] }} />
               </Col>
             </Row>
 
@@ -410,11 +410,11 @@ const PICDashboard = () => {
                   <Card.Header className="bg-light"><h6 className="mb-0 fw-bold">Ringkasan Persentase</h6></Card.Header>
                   <Card.Body>
                     {[
-                      { label: 'Realisasi',         pct: dashboardData.persentaseRealisasi, cls: 'success' },
-                      { label: 'P3DN (TKDN + PDN)', pct: dashboardData.persentaseP3DN,      cls: 'success' },
-                      { label: 'TKDN',              pct: dashboardData.persentaseTKDN,      cls: 'info'    },
-                      { label: 'PDN',               pct: dashboardData.persentasePDN,       cls: 'primary' },
-                      { label: 'Import',            pct: dashboardData.persentaseImpor,     cls: 'danger'  }
+                      { label: 'Realisasi', pct: dashboardData.persentaseRealisasi, cls: 'success' },
+                      { label: 'P3DN (TKDN + PDN)', pct: dashboardData.persentaseP3DN, cls: 'success' },
+                      { label: 'TKDN', pct: dashboardData.persentaseTKDN, cls: 'info' },
+                      { label: 'PDN', pct: dashboardData.persentasePDN, cls: 'primary' },
+                      { label: 'Import', pct: dashboardData.persentaseImpor, cls: 'danger' }
                     ].map(({ label, pct, cls }, i) => (
                       <div key={label} className={i < 4 ? 'mb-3' : ''}>
                         <div className="d-flex justify-content-between mb-1">
