@@ -134,6 +134,8 @@ const PICDashboard = () => {
     let totalKomitmen = 0, totalKomitmenKeseluruhan = 0;
     let totalRealisasi = 0, totalNilaiKontrak = 0;
     let totalTKDN = 0, totalPDN = 0, totalImpor = 0;
+    // Nilai dari komitmen awal (nilaiKeseluruhan*) — tidak terpengaruh filter periode
+    let komitmenTKDN = 0, komitmenPDN = 0, komitmenImpor = 0;
     const dataByJenis = {}, dataByMetode = {};
 
     list.forEach(item => {
@@ -145,6 +147,11 @@ const PICDashboard = () => {
         ? Number(item.realisasi) || 0
         : getRealisasiPeriode(item);
       totalRealisasi += rp;
+
+      // Akumulasi nilai komitmen awal (nilaiKeseluruhan*) — selalu dari data mentah
+      komitmenTKDN  += Number(item.nilaiKeseluruhanTKDN)    || 0;
+      komitmenPDN   += Number(item.nilaiKeseluruhanPDN)     || 0;
+      komitmenImpor += Number(item.nilaiKeseluruhanImport)  || 0;
 
       // Akumulasi global dulu (dipakai jika selectedPeriod === 'all')
       totalTKDN  += Number(item.nilaiKeseluruhanTKDN) || Number(item.nilaiTKDN)    || 0;
@@ -180,19 +187,35 @@ const PICDashboard = () => {
       });
     }
 
-    const totalP3DN          = totalTKDN + totalPDN;
+    const komitmenP3DN        = komitmenTKDN + komitmenPDN;
+    const totalP3DN           = totalTKDN + totalPDN;
     const belumRealisasi      = Math.max(0, totalKomitmenKeseluruhan - totalRealisasi);
-    const persentaseRealisasi = totalKomitmenKeseluruhan > 0 ? ((totalRealisasi / totalKomitmenKeseluruhan) * 100).toFixed(2) : 0;
-    const persentaseTKDN      = totalNilaiKontrak > 0 ? ((totalTKDN  / totalNilaiKontrak) * 100).toFixed(2) : 0;
-    const persentasePDN       = totalNilaiKontrak > 0 ? ((totalPDN   / totalNilaiKontrak) * 100).toFixed(2) : 0;
-    const persentaseImpor     = totalNilaiKontrak > 0 ? ((totalImpor / totalNilaiKontrak) * 100).toFixed(2) : 0;
-    const persentaseP3DN      = totalNilaiKontrak > 0 ? ((totalP3DN  / totalNilaiKontrak) * 100).toFixed(2) : 0;
+    const persentaseRealisasi = totalKomitmenKeseluruhan > 0 
+      ? Math.min(((totalRealisasi / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
+    const persentaseTKDN = totalNilaiKontrak > 0 
+      ? Math.min(((totalTKDN / totalNilaiKontrak) * 100), 100).toFixed(2) : 0;
+    const persentasePDN = totalNilaiKontrak > 0 
+      ? Math.min(((totalPDN / totalNilaiKontrak) * 100), 100).toFixed(2) : 0;
+    const persentaseImpor = totalNilaiKontrak > 0 
+      ? Math.min(((totalImpor / totalNilaiKontrak) * 100), 100).toFixed(2) : 0;
+    const persentaseP3DN = totalNilaiKontrak > 0 
+      ? Math.min(((totalP3DN / totalNilaiKontrak) * 100), 100).toFixed(2) : 0;
+    const persentaseKomitmenTKDN = totalKomitmenKeseluruhan > 0
+      ? Math.min(((komitmenTKDN / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
+    const persentaseKomitmenPDN = totalKomitmenKeseluruhan > 0
+      ? Math.min(((komitmenPDN / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
+    const persentaseKomitmenP3DN = totalKomitmenKeseluruhan > 0
+      ? Math.min(((komitmenP3DN / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
+    const persentaseKomitmenImpor = totalKomitmenKeseluruhan > 0
+      ? Math.min(((komitmenImpor / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
 
     return {
       komitmen: totalKomitmen, komitmenKeseluruhan: totalKomitmenKeseluruhan,
       realisasi: totalRealisasi, nilaiKontrak: totalNilaiKontrak,
       belumRealisasi, tkdn: totalTKDN, pdn: totalPDN, impor: totalImpor, p3dn: totalP3DN,
+      komitmenTKDN, komitmenPDN, komitmenP3DN, komitmenImpor,
       persentaseRealisasi, persentaseTKDN, persentasePDN, persentaseImpor, persentaseP3DN,
+      persentaseKomitmenTKDN, persentaseKomitmenPDN, persentaseKomitmenP3DN, persentaseKomitmenImpor,
       totalData: list.length, dataByJenis, dataByMetode
     };
   }, [rawData, selectedPeriod, selectedMonth, selectedYear, qMonths, filterJenisPaket]);
@@ -307,26 +330,34 @@ const PICDashboard = () => {
               </Card.Body>
             </Card>
 
-            {/* Stats Row 1 */}
+            {/* Stats Row 1 — 3 card */}
             <Row className="g-3 mb-4">
-              <Col xs={12} sm={6} lg={3}><StatCard title="Total Paket" value={dashboardData.totalData} icon={totalPaketIcon} color="secondary" subtitle={`Data untuk ${user.namaAP}`} /></Col>
-              <Col xs={12} sm={6} lg={3}><StatCard title="Komitmen Keseluruhan" value={fmt(dashboardData.komitmenKeseluruhan)} icon={komitmenKeseluruhanIcon} color="info" /></Col>
-              <Col xs={12} sm={6} lg={3}><StatCard title="Komitmen Tahun Ini" value={fmt(dashboardData.komitmen)} icon={komitmenPerTahunIcon} color="primary" /></Col>
-              <Col xs={12} sm={6} lg={3}><StatCard title="Nilai Kontrak" value={fmt(dashboardData.nilaiKontrak)} icon={nilaiKontrakIcon} color="success" /></Col>
+              <Col xs={12} sm={6} lg={4}><StatCard title="Total Paket" value={dashboardData.totalData} icon={totalPaketIcon} color="secondary" subtitle={`Data untuk ${user.namaAP}`} /></Col>
+              <Col xs={12} sm={6} lg={4}><StatCard title="Komitmen Keseluruhan" value={fmt(dashboardData.komitmenKeseluruhan)} icon={komitmenKeseluruhanIcon} color="info" /></Col>
+              <Col xs={12} sm={6} lg={4}><StatCard title="Komitmen Tahun Ini" value={fmt(dashboardData.komitmen)} icon={komitmenPerTahunIcon} color="primary" /></Col>
             </Row>
 
-            {/* Stats Row 2 */}
+            {/* Stats Row 2 — 4 card: TKDN / PDN / P3DN / Import dari Komitmen Awal */}
             <Row className="g-3 mb-4">
-              <Col xs={12} sm={6} lg={3}><StatCard title="Realisasi" value={fmt(dashboardData.realisasi)} icon={realisasiIcon} color="success" percentage={`${dashboardData.persentaseRealisasi}%`} /></Col>
-              <Col xs={12} sm={6} lg={3}><StatCard title="Belum Realisasi" value={fmt(dashboardData.belumRealisasi)} icon={belumRealisasiIcon} color="warning" /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="TKDN (Komitmen Awal)" value={fmt(dashboardData.komitmenTKDN)} icon={tkdnIcon} color="info" percentage={`${dashboardData.persentaseKomitmenTKDN}%`} /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="PDN (Komitmen Awal)" value={fmt(dashboardData.komitmenPDN)} icon={pdnIcon} color="primary" percentage={`${dashboardData.persentaseKomitmenPDN}%`} /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="P3DN (Komitmen Awal)" value={fmt(dashboardData.komitmenP3DN)} icon={p3dnIcon} color="success" percentage={`${dashboardData.persentaseKomitmenP3DN}%`} /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="Import (Komitmen Awal)" value={fmt(dashboardData.komitmenImpor)} icon={importIcon} color="danger" percentage={`${dashboardData.persentaseKomitmenImpor}%`} /></Col>
+            </Row>
+
+            {/* Stats Row 3 — 3 card */}
+            <Row className="g-3 mb-4">
+              <Col xs={12} sm={6} lg={4}><StatCard title="Nilai Kontrak" value={fmt(dashboardData.nilaiKontrak)} icon={nilaiKontrakIcon} color="success" /></Col>
+              <Col xs={12} sm={6} lg={4}><StatCard title="Realisasi" value={fmt(dashboardData.realisasi)} icon={realisasiIcon} color="success" percentage={`${dashboardData.persentaseRealisasi}%`} /></Col>
+              <Col xs={12} sm={6} lg={4}><StatCard title="Belum Realisasi" value={fmt(dashboardData.belumRealisasi)} icon={belumRealisasiIcon} color="warning" /></Col>
+            </Row>
+
+            {/* Stats Row 4 — 4 card: TKDN / PDN / P3DN / Import Realisasi Aktual */}
+            <Row className="g-3 mb-4">
               <Col xs={12} sm={6} lg={3}><StatCard title="TKDN" value={fmt(dashboardData.tkdn)} icon={tkdnIcon} color="info" percentage={`${dashboardData.persentaseTKDN}%`} /></Col>
-              <Col xs={12} sm={6} lg={3}><StatCard title="PDN" value={fmt(dashboardData.pdn)} icon={pdnIcon} color="info" percentage={`${dashboardData.persentasePDN}%`} /></Col>
-            </Row>
-
-            {/* Stats Row 3 */}
-            <Row className="g-3 mb-4">
-              <Col xs={12} sm={6} lg={6}><StatCard title="P3DN (TKDN + PDN)" value={fmt(dashboardData.p3dn)} icon={p3dnIcon} color="success" percentage={`${dashboardData.persentaseP3DN}%`} /></Col>
-              <Col xs={12} sm={6} lg={6}><StatCard title="Import" value={fmt(dashboardData.impor)} icon={importIcon} color="danger" percentage={`${dashboardData.persentaseImpor}%`} /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="PDN" value={fmt(dashboardData.pdn)} icon={pdnIcon} color="primary" percentage={`${dashboardData.persentasePDN}%`} /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="P3DN (TKDN + PDN)" value={fmt(dashboardData.p3dn)} icon={p3dnIcon} color="success" percentage={`${dashboardData.persentaseP3DN}%`} /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="Import" value={fmt(dashboardData.impor)} icon={importIcon} color="danger" percentage={`${dashboardData.persentaseImpor}%`} /></Col>
             </Row>
 
             {/* Charts Row 1 */}

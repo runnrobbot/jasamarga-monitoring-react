@@ -10,6 +10,10 @@ import { toast, ToastContainer } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import 'react-toastify/dist/ReactToastify.css';
 
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { id } from 'date-fns/locale';
+
 import { generateIdPaket, parseExcelBoolean, validateImportData, parseExcelDate} from '../../utils/idGenerator';
 import { addNotification } from '../../utils/notificationService';
 import { checkAPSchedule, getAPScheduleInfo, formatScheduleStatus } from '../../utils/scheduleValidator';
@@ -2242,26 +2246,56 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Waktu Pemanfaatan Dari</Form.Label>
-                      <Form.Control 
-                        type="date" 
-                        name="waktuPemanfaatanDari" 
-                        value={formData.waktuPemanfaatanDari} 
-                        onChange={handleFormChange}
+                      <DatePicker
+                        selected={formData.waktuPemanfaatanDari ? new Date(formData.waktuPemanfaatanDari) : null}
+                        onChange={(date) => {
+                          if (date) {
+                            const formatted = date.toISOString().split('T')[0];
+                            setFormData(prev => ({ ...prev, waktuPemanfaatanDari: formatted }));
+                          } else {
+                            setFormData(prev => ({ ...prev, waktuPemanfaatanDari: '' }));
+                          }
+                        }}
+                        dateFormat="dd/MM/yyyy"
+                        locale={id}
+                        placeholderText="dd/mm/yyyy"
+                        className="form-control"
+                        wrapperClassName="w-100"
                         disabled={isKomitmenDisabled}
-                        className={isKomitmenDisabled ? "bg-light" : ""}
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
+                        yearDropdownItemNumber={10}
+                        scrollableYearDropdown
+                        popperProps={{ strategy: 'fixed' }}
                       />
                     </Form.Group>
                   </Col>
-                   <Col md={6}>
+                  <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Waktu Pemanfaatan Sampai</Form.Label>
-                      <Form.Control 
-                        type="date" 
-                        name="waktuPemanfaatanSampai" 
-                        value={formData.waktuPemanfaatanSampai} 
-                        onChange={handleFormChange}
+                      <DatePicker
+                        selected={formData.waktuPemanfaatanSampai ? new Date(formData.waktuPemanfaatanSampai) : null}
+                        onChange={(date) => {
+                          if (date) {
+                            const formatted = date.toISOString().split('T')[0];
+                            setFormData(prev => ({ ...prev, waktuPemanfaatanSampai: formatted }));
+                          } else {
+                            setFormData(prev => ({ ...prev, waktuPemanfaatanSampai: '' }));
+                          }
+                        }}
+                        dateFormat="dd/MM/yyyy"
+                        locale={id}
+                        placeholderText="dd/mm/yyyy"
+                        className="form-control"
+                        wrapperClassName="w-100"
                         disabled={isKomitmenDisabled}
-                        className={isKomitmenDisabled ? "bg-light" : ""}
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
+                        yearDropdownItemNumber={10}
+                        scrollableYearDropdown
+                        popperProps={{ strategy: 'fixed' }}
                       />
                     </Form.Group>
                   </Col>
@@ -2827,13 +2861,13 @@ const calculateSummaryKeseluruhan = () => {
                     <Form.Label className="fw-bold small mb-0">Nilai Realisasi (Rp)</Form.Label>
                   </Col>
                   <Col md={2}>
-                    <Form.Label className="fw-bold small mb-0">Bulan</Form.Label>
+                    <Form.Label className="fw-bold small mb-0">Tanggal Invoice</Form.Label>
                   </Col>
                   <Col md={2}>
                     <Form.Label className="fw-bold small mb-0">Nomor Invoice</Form.Label>
                   </Col>
                   <Col md={2}>
-                    <Form.Label className="fw-bold small mb-0">Tanggal Invoice</Form.Label>
+                    <Form.Label className="fw-bold small mb-0">Bulan</Form.Label>
                   </Col>
                   <Col md={2}>
                     <Form.Label className="fw-bold small mb-0">Upload Dokumen</Form.Label>
@@ -2844,10 +2878,6 @@ const calculateSummaryKeseluruhan = () => {
                 </Row>
                 {/* Detail Realisasi per Periode */}
                   {realisasiRows.map((row, index) => {
-                    // FIX: isExistingRow sekarang HANYA dihitung dari kondisi isAddingNewRealisasi
-                    // dan mencocokkan dengan data existing di selectedKomitmen.
-                    // row.isExisting TIDAK lagi di-set saat handleEdit(), sehingga
-                    // flow reject→resubmit→approve tetap bisa mengedit realisasi.
                     const isExistingRow = editMode 
                       && isAddingNewRealisasi
                       && selectedKomitmen?.realisasiDetail?.some(
@@ -2870,18 +2900,14 @@ const calculateSummaryKeseluruhan = () => {
                         />
                       </Col>
                       <Col md={2}>
-                        <Form.Select 
-                          value={row.bulanRealisasi || ''} 
-                          onChange={(e) => handleRealisasiChange(index, 'bulanRealisasi', e.target.value)}
+                        <Form.Control 
+                          type="date" 
+                          value={row.tanggalInvoice || ''} 
+                          onChange={(e) => handleRealisasiChange(index, 'tanggalInvoice', e.target.value)}
                           disabled={isExistingRow}
                           className={isExistingRow ? "bg-light" : "bg-success bg-opacity-10"}
                           size="sm"
-                        >
-                          <option value="">Pilih Bulan</option>
-                          {months.map(m => (
-                            <option key={m.value} value={m.value}>{m.label}</option>
-                          ))}
-                        </Form.Select>
+                        />
                       </Col>
                       <Col md={2}>
                         <Form.Control 
@@ -2894,15 +2920,19 @@ const calculateSummaryKeseluruhan = () => {
                           size="sm"
                         />
                       </Col>
-                      <Col md={2}>
-                        <Form.Control 
-                          type="date" 
-                          value={row.tanggalInvoice || ''} 
-                          onChange={(e) => handleRealisasiChange(index, 'tanggalInvoice', e.target.value)}
+                       <Col md={2}>
+                        <Form.Select 
+                          value={row.bulanRealisasi || ''} 
+                          onChange={(e) => handleRealisasiChange(index, 'bulanRealisasi', e.target.value)}
                           disabled={isExistingRow}
                           className={isExistingRow ? "bg-light" : "bg-success bg-opacity-10"}
                           size="sm"
-                        />
+                        >
+                          <option value="">Pilih Bulan</option>
+                          {months.map(m => (
+                            <option key={m.value} value={m.value}>{m.label}</option>
+                          ))}
+                        </Form.Select>
                       </Col>
                       <Col md={2}>
                         {row.dokumen ? (
