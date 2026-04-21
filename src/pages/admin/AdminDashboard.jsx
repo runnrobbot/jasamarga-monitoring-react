@@ -226,27 +226,13 @@ const AdminDashboard = () => {
       });
     }
 
-    const komitmenP3DN        = komitmenTKDN + komitmenPDN;
-    const totalP3DN           = totalTKDN + totalPDN;
-    const belumRealisasi      = Math.max(0, totalKomitmenKeseluruhan - totalRealisasi);
-    const persentaseRealisasi = totalKomitmenKeseluruhan > 0 
-      ? Math.min(((totalRealisasi / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
-    const persentaseTKDN = totalNilaiKontrak > 0 
-      ? Math.min(((totalTKDN / totalNilaiKontrak) * 100), 100).toFixed(2) : 0;
-    const persentasePDN = totalNilaiKontrak > 0 
-      ? Math.min(((totalPDN / totalNilaiKontrak) * 100), 100).toFixed(2) : 0;
-    const persentaseImpor = totalNilaiKontrak > 0 
-      ? Math.min(((totalImpor / totalNilaiKontrak) * 100), 100).toFixed(2) : 0;
-    const persentaseP3DN = totalNilaiKontrak > 0 
-      ? Math.min(((totalP3DN / totalNilaiKontrak) * 100), 100).toFixed(2) : 0;
-    const persentaseKomitmenTKDN = totalKomitmenKeseluruhan > 0
-      ? Math.min(((komitmenTKDN / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
-    const persentaseKomitmenPDN = totalKomitmenKeseluruhan > 0
-      ? Math.min(((komitmenPDN / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
-    const persentaseKomitmenP3DN = totalKomitmenKeseluruhan > 0
-      ? Math.min(((komitmenP3DN / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
-    const persentaseKomitmenImpor = totalKomitmenKeseluruhan > 0
-      ? Math.min(((komitmenImpor / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
+    const totalP3DN          = totalTKDN + totalPDN;
+    const belumRealisasi     = Math.max(0, totalKomitmenKeseluruhan - totalRealisasi);
+    const persentaseRealisasi = totalKomitmenKeseluruhan > 0 ? ((totalRealisasi / totalKomitmenKeseluruhan) * 100).toFixed(2) : 0;
+    const persentaseTKDN     = totalNilaiKontrak > 0 ? ((totalTKDN  / totalNilaiKontrak) * 100).toFixed(2) : 0;
+    const persentasePDN      = totalNilaiKontrak > 0 ? ((totalPDN   / totalNilaiKontrak) * 100).toFixed(2) : 0;
+    const persentaseImpor    = totalNilaiKontrak > 0 ? ((totalImpor / totalNilaiKontrak) * 100).toFixed(2) : 0;
+    const persentaseP3DN     = totalNilaiKontrak > 0 ? ((totalP3DN  / totalNilaiKontrak) * 100).toFixed(2) : 0;
 
     return {
       komitmen: totalKomitmen, komitmenKeseluruhan: totalKomitmenKeseluruhan,
