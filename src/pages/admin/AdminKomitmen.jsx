@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import NavigationBar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
 import { FaEye, FaTrash, FaFileExport, FaFileImport, FaSearch, FaFilter, FaDownload, FaPlus, FaEdit, FaCalculator, FaTimes, FaCheckCircle, FaTimesCircle, FaClock, FaExclamationTriangle } from 'react-icons/fa';
-import { toast, ToastContainer, Slide} from 'react-toastify';
+import { toast, ToastContainer, Slide } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -42,11 +42,11 @@ const AdminKomitmen = () => {
   const [approvalNote, setApprovalNote] = useState('');
   const [filterApprovalStatus, setFilterApprovalStatus] = useState('all');
 
-  const [users, setUsers] = useState({}); 
+  const [users, setUsers] = useState({});
   const [showImportRealisasiModal, setShowImportRealisasiModal] = useState(false);
   const [importedDataNeedRealisasi, setImportedDataNeedRealisasi] = useState([]);
   const [currentImportIndex, setCurrentImportIndex] = useState(0);
-  
+
   const [realisasiRows, setRealisasiRows] = useState([{
     id: Date.now(),
     tahunRealisasi: '',
@@ -58,12 +58,12 @@ const AdminKomitmen = () => {
   }]);
 
   const [rencanaRows, setRencanaRows] = useState([{
-  id: Date.now(),
-  tahunRencana: '',
-  nilaiRencana: '',
-  bulanRencana: '',
-  keterangan: ''
-}]);
+    id: Date.now(),
+    tahunRencana: '',
+    nilaiRencana: '',
+    bulanRencana: '',
+    keterangan: ''
+  }]);
 
   const [formData, setFormData] = useState({
     idPaketMonitoring: '',
@@ -165,19 +165,19 @@ const AdminKomitmen = () => {
   };
 
   const handleRealisasiChange = (index, field, value) => {
-  const newRows = [...realisasiRows];
-  newRows[index][field] = value;
+    const newRows = [...realisasiRows];
+    newRows[index][field] = value;
 
-  // Auto-set tahunRealisasi & bulanRealisasi dari tanggalInvoice
-  if (field === 'tanggalInvoice' && value) {
-    const d = new Date(value);
-    if (!isNaN(d)) {
-      newRows[index].tahunRealisasi = d.getFullYear().toString();
-      newRows[index].bulanRealisasi = (d.getMonth() + 1).toString();
+    // Auto-set tahunRealisasi & bulanRealisasi dari tanggalInvoice
+    if (field === 'tanggalInvoice' && value) {
+      const d = new Date(value);
+      if (!isNaN(d)) {
+        newRows[index].tahunRealisasi = d.getFullYear().toString();
+        newRows[index].bulanRealisasi = (d.getMonth() + 1).toString();
+      }
     }
-  }
 
-  setRealisasiRows(newRows);
+    setRealisasiRows(newRows);
   };
 
   const addRencanaRow = () => {
@@ -214,7 +214,7 @@ const AdminKomitmen = () => {
     setRencanaRows(newRows);
   };
 
-    // ✅ TAMBAHKAN INI - Cleanup saat component unmount
+  // ✅ TAMBAHKAN INI - Cleanup saat component unmount
   useEffect(() => {
     return () => {
       setShowApprovalModal(false);
@@ -228,7 +228,7 @@ const AdminKomitmen = () => {
     fetchMasterAP();
     fetchUsers();
     fetchKomitmen();
-    const unsubscribe = fetchKomitmen();  
+    const unsubscribe = fetchKomitmen();
     return () => {
       if (unsubscribe) unsubscribe();
     };
@@ -236,14 +236,14 @@ const AdminKomitmen = () => {
 
   useEffect(() => {
     filterData();
-}, [searchTerm, filterStatus, filterApprovalStatus, komitmenList]);
+  }, [searchTerm, filterStatus, filterApprovalStatus, komitmenList]);
 
   useEffect(() => {
     if (editMode || realisasiRows.some(row => parseRupiahInput(row.realisasi) > 0)) {
       const totalRealisasi = realisasiRows.reduce((sum, row) => {
         return sum + parseRupiahInput(row.realisasi);
       }, 0);
-      
+
       if (formData.pdnCheckbox && totalRealisasi > 0) {
         setFormData(prev => ({
           ...prev,
@@ -275,7 +275,7 @@ const AdminKomitmen = () => {
     editMode
   ]);
 
-const fetchMasterAP = async () => {
+  const fetchMasterAP = async () => {
     try {
       const snapshot = await getDocs(collection(db, 'masterAP'));
       const data = snapshot.docs
@@ -312,8 +312,8 @@ const fetchMasterAP = async () => {
   const fetchKomitmen = () => {
     setLoading(true);
     const q = query(collection(db, 'komitmen'), orderBy('createdAt', 'desc'));
-    
-    const unsubscribe = onSnapshot(q, 
+
+    const unsubscribe = onSnapshot(q,
       (snapshot) => {
         const data = snapshot.docs.map(doc => ({
           id: doc.id,
@@ -328,7 +328,7 @@ const fetchMasterAP = async () => {
         setLoading(false);
       }
     );
-    
+
     return unsubscribe;
   };
 
@@ -360,7 +360,7 @@ const fetchMasterAP = async () => {
 
   const handleFormChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     if (name === 'pdnCheckbox' || name === 'tkdnCheckbox' || name === 'importCheckbox') {
       if (checked) {
         setFormData(prev => ({
@@ -454,106 +454,106 @@ const fetchMasterAP = async () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       setLoading(true);
 
-    const checkboxCount = [formData.pdnCheckbox, formData.tkdnCheckbox, formData.importCheckbox].filter(v => v === true).length;
-    if (checkboxCount > 1) {
-      toast.error('Hanya boleh memilih 1 checkbox (PDN, TKDN, atau Import)');
-      setLoading(false);
-      return;
-    }
-
-    if (!formData.namaPaket || !formData.namaAP || !formData.nilaiKomitmen) {
-      toast.error('Mohon lengkapi semua field wajib di Tab Komitmen Awal (Nama Paket, Nama AP, Nilai Komitmen)');
-      setLoading(false);
-      return;
-    }
-
-    // ✅ VALIDASI BARU - Field wajib untuk PDN/TKDN/Import
-    if (formData.pdnCheckbox) {
-      if (!formData.nilaiTahunBerjalanPDN || !formData.nilaiKeseluruhanPDN) {
-        toast.error('Nilai Tahun Berjalan PDN dan Nilai Keseluruhan PDN wajib diisi');
+      const checkboxCount = [formData.pdnCheckbox, formData.tkdnCheckbox, formData.importCheckbox].filter(v => v === true).length;
+      if (checkboxCount > 1) {
+        toast.error('Hanya boleh memilih 1 checkbox (PDN, TKDN, atau Import)');
         setLoading(false);
         return;
       }
-    }
 
-    if (formData.tkdnCheckbox) {
-      if (!formData.nilaiTahunBerjalanTKDN || !formData.nilaiKeseluruhanTKDN) {
-        toast.error('Nilai Tahun Berjalan TKDN dan Nilai Keseluruhan TKDN wajib diisi');
+      if (!formData.namaPaket || !formData.namaAP || !formData.nilaiKomitmen) {
+        toast.error('Mohon lengkapi semua field wajib di Tab Komitmen Awal (Nama Paket, Nama AP, Nilai Komitmen)');
         setLoading(false);
         return;
       }
-    }
 
-    if (formData.importCheckbox) {
-      if (!formData.nilaiTahunBerjalanImport || !formData.nilaiKeseluruhanImport) {
-        toast.error('Nilai Tahun Berjalan Import dan Nilai Keseluruhan Import wajib diisi');
-        setLoading(false);
-        return;
-      }
-    }
-
-    if (!formData.waktuPemanfaatanDari || !formData.waktuPemanfaatanSampai) {
-      toast.error('Waktu Pemanfaatan Dari dan Sampai wajib diisi');
-      setLoading(false);
-      return;
-    }
-
-    const hasRealisasiData = realisasiRows.some(row => 
-      row.realisasi && parseRupiahInput(row.realisasi) > 0
-    );
-
-    if (!hasRealisasiData && !editMode) {
-      toast.error('Mohon isi minimal 1 baris Detail Realisasi per Periode di Tab Realisasi');
-      setLoading(false);
-      return;
-    }
-
-    if (hasRealisasiData) {
-      const invalidRealisasiRow = realisasiRows.find((row, index) => {
-        const hasAmount = row.realisasi && parseRupiahInput(row.realisasi) > 0;
-        if (hasAmount) {
-          if (!row.bulanRealisasi || !row.nomorInvoice) {
-            toast.error(`Baris realisasi ${index + 1}: Bulan dan Nomor Invoice wajib diisi jika ada nilai realisasi`);
-            return true;
-          }
+      // ✅ VALIDASI BARU - Field wajib untuk PDN/TKDN/Import
+      if (formData.pdnCheckbox) {
+        if (!formData.nilaiTahunBerjalanPDN || !formData.nilaiKeseluruhanPDN) {
+          toast.error('Nilai Tahun Berjalan PDN dan Nilai Keseluruhan PDN wajib diisi');
+          setLoading(false);
+          return;
         }
-        return false;
-      });
+      }
 
-      if (invalidRealisasiRow) {
+      if (formData.tkdnCheckbox) {
+        if (!formData.nilaiTahunBerjalanTKDN || !formData.nilaiKeseluruhanTKDN) {
+          toast.error('Nilai Tahun Berjalan TKDN dan Nilai Keseluruhan TKDN wajib diisi');
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (formData.importCheckbox) {
+        if (!formData.nilaiTahunBerjalanImport || !formData.nilaiKeseluruhanImport) {
+          toast.error('Nilai Tahun Berjalan Import dan Nilai Keseluruhan Import wajib diisi');
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (!formData.waktuPemanfaatanDari || !formData.waktuPemanfaatanSampai) {
+        toast.error('Waktu Pemanfaatan Dari dan Sampai wajib diisi');
         setLoading(false);
         return;
       }
-    }
 
-    if (!editMode) {
-      
-      if (hasRealisasiData && !formData.namaPenyedia) {
-        toast.error('Nama Penyedia wajib diisi di Tab Realisasi');
+      const hasRealisasiData = realisasiRows.some(row =>
+        row.realisasi && parseRupiahInput(row.realisasi) > 0
+      );
+
+      if (!hasRealisasiData && !editMode) {
+        toast.error('Mohon isi minimal 1 baris Detail Realisasi per Periode di Tab Realisasi');
         setLoading(false);
         return;
       }
 
-      if (hasRealisasiData && !formData.nilaiKontrakKeseluruhan) {
-        toast.error('Nilai Kontrak Keseluruhan wajib diisi di Tab Realisasi');
+      if (hasRealisasiData) {
+        const invalidRealisasiRow = realisasiRows.find((row, index) => {
+          const hasAmount = row.realisasi && parseRupiahInput(row.realisasi) > 0;
+          if (hasAmount) {
+            if (!row.bulanRealisasi || !row.nomorInvoice) {
+              toast.error(`Baris realisasi ${index + 1}: Bulan dan Nomor Invoice wajib diisi jika ada nilai realisasi`);
+              return true;
+            }
+          }
+          return false;
+        });
+
+        if (invalidRealisasiRow) {
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (!editMode) {
+
+        if (hasRealisasiData && !formData.namaPenyedia) {
+          toast.error('Nama Penyedia wajib diisi di Tab Realisasi');
+          setLoading(false);
+          return;
+        }
+
+        if (hasRealisasiData && !formData.nilaiKontrakKeseluruhan) {
+          toast.error('Nilai Kontrak Keseluruhan wajib diisi di Tab Realisasi');
+          setLoading(false);
+          return;
+        }
+      }
+
+      const selectedAP = masterAPList.find(ap => ap.namaAP === formData.namaAP);
+      if (!selectedAP) {
+        toast.error('AP tidak ditemukan di Master Data');
         setLoading(false);
         return;
       }
-    }
-
-    const selectedAP = masterAPList.find(ap => ap.namaAP === formData.namaAP);
-    if (!selectedAP) {
-      toast.error('AP tidak ditemukan di Master Data');
-      setLoading(false);
-      return;
-    }
 
       let idPaket = formData.idPaketMonitoring;
-      
+
       if (!editMode || !idPaket) {
         idPaket = await generateIdPaket(formData.jenisPaket, selectedAP.singkatanAP);
       }
@@ -638,7 +638,7 @@ const fetchMasterAP = async () => {
         if (isAddingNewRealisasi) {
           // Sub-mode: Add New Realisasi (merge dengan existing)
           const existingRealisasi = selectedKomitmen.realisasiDetail || [];
-          
+
           const newRealisasiDetail = [
             ...existingRealisasi.map(row => ({ // ← Data lama dengan backfill namaPenyedia
               ...row,
@@ -657,7 +657,7 @@ const fetchMasterAP = async () => {
               namaPenyedia: formData.namaPenyedia
             }))
           ];
-          
+
           const totalRealisasiBaru = newRealisasiDetail.reduce((sum, detail) => {
             return sum + (detail.realisasi || 0);
           }, 0);
@@ -674,8 +674,8 @@ const fetchMasterAP = async () => {
             nilaiReferensiKeseluruhan = nilaiKontrakValue > 0 ? nilaiKontrakValue : nilaiKomitmenTahunIni;
           }
 
-          const progressBaru = nilaiReferensiKeseluruhan > 0 
-            ? ((totalRealisasiBaru / nilaiReferensiKeseluruhan) * 100).toFixed(2) 
+          const progressBaru = nilaiReferensiKeseluruhan > 0
+            ? ((totalRealisasiBaru / nilaiReferensiKeseluruhan) * 100).toFixed(2)
             : '0';
           const sisaBaru = nilaiReferensiKeseluruhan - totalRealisasiBaru;
           const updateData = {
@@ -696,13 +696,13 @@ const fetchMasterAP = async () => {
             namaPengadaanRealisasi: formData.namaPengadaanRealisasi,
             metodePemilihanRealisasi: formData.metodePemilihanRealisasi
           };
-          
+
           Object.keys(updateData).forEach(key => {
             if (updateData[key] === undefined) {
               delete updateData[key];
             }
           });
-          
+
           await updateDoc(doc(db, 'komitmen', selectedKomitmen.id), updateData);
           toast.success('Realisasi baru berhasil ditambahkan!');
           setIsAddingNewRealisasi(false);
@@ -716,7 +716,7 @@ const fetchMasterAP = async () => {
             k.id === selectedKomitmen.id ? { ...k, ...dataToSave } : k
           ));
         }
-        
+
         // Notification untuk UPDATE
         try {
           await addNotification(
@@ -733,7 +733,7 @@ const fetchMasterAP = async () => {
         const docRef = await addDoc(collection(db, 'komitmen'), dataToSave);
         toast.success('Data berhasil disimpan');
         setKomitmenList(prev => [{ id: docRef.id, ...dataToSave }, ...prev]);
-        
+
         try {
           await addNotification(
             user?.uid || '',
@@ -748,13 +748,13 @@ const fetchMasterAP = async () => {
       }
 
       handleCloseFormModal();
-      } catch (error) {
-        console.error('Error:', error);
-        toast.error('Terjadi kesalahan saat menyimpan data: ' + error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Terjadi kesalahan saat menyimpan data: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleEdit = (komitmen) => {
     setFormData({
       idPaketMonitoring: komitmen.idPaketMonitoring || '',
@@ -832,7 +832,7 @@ const fetchMasterAP = async () => {
         keterangan: ''
       }]);
     }
-    
+
     setSelectedKomitmen(komitmen);
     setEditMode(true);
     setShowFormModal(true);
@@ -844,7 +844,7 @@ const fetchMasterAP = async () => {
         await deleteDoc(doc(db, 'komitmen', id));
         toast.success('Data berhasil dihapus');
         setKomitmenList(prev => prev.filter(k => k.id !== id));
-        
+
         await addNotification(
           user?.uid || '',
           'warning',
@@ -860,117 +860,117 @@ const fetchMasterAP = async () => {
   };
 
   const handleExport = () => {
-  const dataToExport = filteredList.map(item => ({
-    'ID Paket': item.idPaketMonitoring,
-    'Jenis Paket': item.jenisPaket,
-    'ID RUP': item.idRUP || '',
-    'Nama AP': item.namaAP,
-    'Nama Paket': item.namaPaket,
-    'Jenis Anggaran': item.jenisAnggaran,
-    'Jenis Pengadaan': item.jenisPengadaan,
-    'Metode Pemilihan': item.usulanMetodePemilihan,
-    'Status PaDi': item.statusPadi,
-    'Nilai Komitmen': item.nilaiKomitmen,
-    'Komitmen Keseluruhan': item.komitmenKeseluruhan,
-    'Waktu Pemanfaatan Dari': item.waktuPemanfaatanDari,
-    'Waktu Pemanfaatan Sampai': item.waktuPemanfaatanSampai,    
-    'Tahun Rencana': item.rencanaDetail?.[0]?.tahunRencana || '',
-    'Nilai Rencana': item.rencanaDetail?.[0]?.nilaiRencana || '',
-    'Bulan Rencana': item.rencanaDetail?.[0]?.bulanRencana || '',
-    'Keterangan Rencana': item.rencanaDetail?.[0]?.keterangan || '',    
-    'PDN': item.pdnCheckbox ? 'TRUE' : 'FALSE',
-    'TKDN': item.tkdnCheckbox ? 'TRUE' : 'FALSE',
-    'Import': item.importCheckbox ? 'TRUE' : 'FALSE',
-    'Nilai Tahun Berjalan PDN': item.nilaiTahunBerjalanPDN || 0,
-    'Nilai Keseluruhan PDN': item.nilaiKeseluruhanPDN || 0,
-    'Nilai Tahun Berjalan TKDN': item.nilaiTahunBerjalanTKDN || 0,
-    'Nilai Keseluruhan TKDN': item.nilaiKeseluruhanTKDN || 0,
-    'Nilai Tahun Berjalan Import': item.nilaiTahunBerjalanImport || 0,
-    'Nilai Keseluruhan Import': item.nilaiKeseluruhanImport || 0, 
-    'Target Nilai TKDN': item.targetNilaiTKDN || 0,
-    'Nilai Anggaran Belanja': item.nilaiAnggaranBelanja || 0,
-    'Catatan Komitmen': item.catatanKomitmen || '',
-    'Realisasi': item.realisasi,
-    'Nilai Kontrak': item.nilaiKontrakKeseluruhan || 0,
-    'Nama Penyedia': item.namaPenyedia,
-    'Status': item.status
-  }));
+    const dataToExport = filteredList.map(item => ({
+      'ID Paket': item.idPaketMonitoring,
+      'Jenis Paket': item.jenisPaket,
+      'ID RUP': item.idRUP || '',
+      'Nama AP': item.namaAP,
+      'Nama Paket': item.namaPaket,
+      'Jenis Anggaran': item.jenisAnggaran,
+      'Jenis Pengadaan': item.jenisPengadaan,
+      'Metode Pemilihan': item.usulanMetodePemilihan,
+      'Status PaDi': item.statusPadi,
+      'Nilai Komitmen': item.nilaiKomitmen,
+      'Komitmen Keseluruhan': item.komitmenKeseluruhan,
+      'Waktu Pemanfaatan Dari': item.waktuPemanfaatanDari,
+      'Waktu Pemanfaatan Sampai': item.waktuPemanfaatanSampai,
+      'Tahun Rencana': item.rencanaDetail?.[0]?.tahunRencana || '',
+      'Nilai Rencana': item.rencanaDetail?.[0]?.nilaiRencana || '',
+      'Bulan Rencana': item.rencanaDetail?.[0]?.bulanRencana || '',
+      'Keterangan Rencana': item.rencanaDetail?.[0]?.keterangan || '',
+      'PDN': item.pdnCheckbox ? 'TRUE' : 'FALSE',
+      'TKDN': item.tkdnCheckbox ? 'TRUE' : 'FALSE',
+      'Import': item.importCheckbox ? 'TRUE' : 'FALSE',
+      'Nilai Tahun Berjalan PDN': item.nilaiTahunBerjalanPDN || 0,
+      'Nilai Keseluruhan PDN': item.nilaiKeseluruhanPDN || 0,
+      'Nilai Tahun Berjalan TKDN': item.nilaiTahunBerjalanTKDN || 0,
+      'Nilai Keseluruhan TKDN': item.nilaiKeseluruhanTKDN || 0,
+      'Nilai Tahun Berjalan Import': item.nilaiTahunBerjalanImport || 0,
+      'Nilai Keseluruhan Import': item.nilaiKeseluruhanImport || 0,
+      'Target Nilai TKDN': item.targetNilaiTKDN || 0,
+      'Nilai Anggaran Belanja': item.nilaiAnggaranBelanja || 0,
+      'Catatan Komitmen': item.catatanKomitmen || '',
+      'Realisasi': item.realisasi,
+      'Nilai Kontrak': item.nilaiKontrakKeseluruhan || 0,
+      'Nama Penyedia': item.namaPenyedia,
+      'Status': item.status
+    }));
 
-  const ws = XLSX.utils.json_to_sheet(dataToExport);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Komitmen');
-  XLSX.writeFile(wb, `Export_Komitmen_${new Date().toISOString().split('T')[0]}.xlsx`);
-  toast.success('Data berhasil diexport');
-};
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Komitmen');
+    XLSX.writeFile(wb, `Export_Komitmen_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success('Data berhasil diexport');
+  };
 
   const validateImportDataCustom = (data) => {
-  const errors = [];
-  
-  data.forEach((item, index) => {
-    const rowNum = index + 2;
-    
-    if (!item['Nama Paket'] || item['Nama Paket'].toString().trim() === '') {
-      errors.push(`Baris ${rowNum}: Nama Paket wajib diisi`);
-    }
-    
-    if (!item['Nama AP'] || item['Nama AP'].toString().trim() === '') {
-      errors.push(`Baris ${rowNum}: Nama AP wajib diisi`);
-    }
-    
-    const nilaiKomitmen = parseFloat(item['Nilai Komitmen']);
-    if (!item['Nilai Komitmen'] || isNaN(nilaiKomitmen) || nilaiKomitmen <= 0) {
-      errors.push(`Baris ${rowNum}: Nilai Komitmen wajib diisi dan harus lebih dari 0`);
-    }
-    
-    const validJenisPaket = ['Single Year (SY)', 'Multi Year (MY)'];
-    if (!item['Jenis Paket'] || !validJenisPaket.includes(item['Jenis Paket'])) {
-      errors.push(`Baris ${rowNum}: Jenis Paket wajib diisi`);
-    }
-    
-    const validJenisPengadaan = ['Barang', 'Jasa Konsultasi', 'Jasa Lainnya', 'Pekerjaan Konstruksi'];
-    if (!item['Jenis Pengadaan'] || !validJenisPengadaan.includes(item['Jenis Pengadaan'])) {
-      errors.push(`Baris ${rowNum}: Jenis Pengadaan wajib diisi`);
-    }
-    
-    const validMetode = [
-      'Tender/Seleksi Umum',
-      'Tender/Seleksi Terbatas',
-      'Penunjukan Langsung',
-      'Pengadaan Langsung',
-      'Penetapan Langsung'
-    ];
-    if (!item['Metode Pemilihan'] || !validMetode.includes(item['Metode Pemilihan'])) {
-      errors.push(`Baris ${rowNum}: Metode Pemilihan wajib diisi`);
-    }
-    
-    const validJenisAnggaran = ['Opex', 'Capex'];
-    if (!item['Jenis Anggaran'] || !validJenisAnggaran.includes(item['Jenis Anggaran'])) {
-      errors.push(`Baris ${rowNum}: Jenis Anggaran wajib diisi`);
-    }
-    
-    const parseCheckbox = (value) => {
-      if (typeof value === 'boolean') return value;
-      if (typeof value === 'string') {
-        const normalized = value.trim().toUpperCase();
-        return normalized === 'TRUE' || normalized === 'YA' || normalized === 'YES' || normalized === '1';
+    const errors = [];
+
+    data.forEach((item, index) => {
+      const rowNum = index + 2;
+
+      if (!item['Nama Paket'] || item['Nama Paket'].toString().trim() === '') {
+        errors.push(`Baris ${rowNum}: Nama Paket wajib diisi`);
       }
-      if (typeof value === 'number') return value === 1;
-      return false;
-    };
-    
-    const pdnChecked = parseCheckbox(item['PDN']);
-    const tkdnChecked = parseCheckbox(item['TKDN']);
-    const importChecked = parseCheckbox(item['Import']);
-    
-    const checkboxCount = [pdnChecked, tkdnChecked, importChecked].filter(v => v === true).length;
-    
-    if (checkboxCount > 1) {
-      errors.push(`Baris ${rowNum}: Hanya boleh memilih 1 checkbox (PDN, TKDN, atau Import)`);
-    }
-  });
-  
-  return errors;
-};
+
+      if (!item['Nama AP'] || item['Nama AP'].toString().trim() === '') {
+        errors.push(`Baris ${rowNum}: Nama AP wajib diisi`);
+      }
+
+      const nilaiKomitmen = parseFloat(item['Nilai Komitmen']);
+      if (!item['Nilai Komitmen'] || isNaN(nilaiKomitmen) || nilaiKomitmen <= 0) {
+        errors.push(`Baris ${rowNum}: Nilai Komitmen wajib diisi dan harus lebih dari 0`);
+      }
+
+      const validJenisPaket = ['Single Year (SY)', 'Multi Year (MY)'];
+      if (!item['Jenis Paket'] || !validJenisPaket.includes(item['Jenis Paket'])) {
+        errors.push(`Baris ${rowNum}: Jenis Paket wajib diisi`);
+      }
+
+      const validJenisPengadaan = ['Barang', 'Jasa Konsultasi', 'Jasa Lainnya', 'Pekerjaan Konstruksi'];
+      if (!item['Jenis Pengadaan'] || !validJenisPengadaan.includes(item['Jenis Pengadaan'])) {
+        errors.push(`Baris ${rowNum}: Jenis Pengadaan wajib diisi`);
+      }
+
+      const validMetode = [
+        'Tender/Seleksi Umum',
+        'Tender/Seleksi Terbatas',
+        'Penunjukan Langsung',
+        'Pengadaan Langsung',
+        'Penetapan Langsung'
+      ];
+      if (!item['Metode Pemilihan'] || !validMetode.includes(item['Metode Pemilihan'])) {
+        errors.push(`Baris ${rowNum}: Metode Pemilihan wajib diisi`);
+      }
+
+      const validJenisAnggaran = ['Opex', 'Capex'];
+      if (!item['Jenis Anggaran'] || !validJenisAnggaran.includes(item['Jenis Anggaran'])) {
+        errors.push(`Baris ${rowNum}: Jenis Anggaran wajib diisi`);
+      }
+
+      const parseCheckbox = (value) => {
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'string') {
+          const normalized = value.trim().toUpperCase();
+          return normalized === 'TRUE' || normalized === 'YA' || normalized === 'YES' || normalized === '1';
+        }
+        if (typeof value === 'number') return value === 1;
+        return false;
+      };
+
+      const pdnChecked = parseCheckbox(item['PDN']);
+      const tkdnChecked = parseCheckbox(item['TKDN']);
+      const importChecked = parseCheckbox(item['Import']);
+
+      const checkboxCount = [pdnChecked, tkdnChecked, importChecked].filter(v => v === true).length;
+
+      if (checkboxCount > 1) {
+        errors.push(`Baris ${rowNum}: Hanya boleh memilih 1 checkbox (PDN, TKDN, atau Import)`);
+      }
+    });
+
+    return errors;
+  };
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -1000,27 +1000,27 @@ const fetchMasterAP = async () => {
 
   const handleImportConfirm = async () => {
     try {
-       const duplicates = [];
-    for (const item of importPreview) {
-      const existingQuery = query(
-        collection(db, 'komitmen'),
-        where('namaPaket', '==', item['Nama Paket'])
-      );
-      const existingSnapshot = await getDocs(existingQuery);
-      
-      if (!existingSnapshot.empty) {
-        duplicates.push(item['Nama Paket']);
-      }
-    }
+      const duplicates = [];
+      for (const item of importPreview) {
+        const existingQuery = query(
+          collection(db, 'komitmen'),
+          where('namaPaket', '==', item['Nama Paket'])
+        );
+        const existingSnapshot = await getDocs(existingQuery);
 
-    if (duplicates.length > 0) {
-      toast.error(
-        `Import dibatalkan! Ditemukan ${duplicates.length} duplikasi:\n${duplicates.slice(0, 5).join('\n')}${duplicates.length > 5 ? '\n...dan lainnya' : ''}`,
-        { autoClose: 15000 }
-      );
-      setImporting(false);
-      return;
-    }
+        if (!existingSnapshot.empty) {
+          duplicates.push(item['Nama Paket']);
+        }
+      }
+
+      if (duplicates.length > 0) {
+        toast.error(
+          `Import dibatalkan! Ditemukan ${duplicates.length} duplikasi:\n${duplicates.slice(0, 5).join('\n')}${duplicates.length > 5 ? '\n...dan lainnya' : ''}`,
+          { autoClose: 15000 }
+        );
+        setImporting(false);
+        return;
+      }
 
       setImporting(true);
       const dataReadyToImport = [];
@@ -1053,13 +1053,13 @@ const fetchMasterAP = async () => {
           komitmenKeseluruhan: parseFloat(item['Komitmen Keseluruhan']) || 0,
           waktuPemanfaatanDari: parseExcelDate(item['Waktu Pemanfaatan Dari']),
           waktuPemanfaatanSampai: parseExcelDate(item['Waktu Pemanfaatan Sampai']),
-          rencanaDetail: item['Nilai Rencana'] && parseFloat(item['Nilai Rencana']) > 0 
+          rencanaDetail: item['Nilai Rencana'] && parseFloat(item['Nilai Rencana']) > 0
             ? [{
-                tahunRencana: item['Tahun Rencana'] || '',
-                nilaiRencana: parseFloat(item['Nilai Rencana']) || 0,
-                bulanRencana: item['Bulan Rencana'] || '',
-                keterangan: item['Keterangan Rencana'] || ''
-              }]
+              tahunRencana: item['Tahun Rencana'] || '',
+              nilaiRencana: parseFloat(item['Nilai Rencana']) || 0,
+              bulanRencana: item['Bulan Rencana'] || '',
+              keterangan: item['Keterangan Rencana'] || ''
+            }]
             : [],
           pdnCheckbox: parseExcelBoolean(item['PDN']),
           tkdnCheckbox: parseExcelBoolean(item['TKDN']),
@@ -1109,12 +1109,12 @@ const fetchMasterAP = async () => {
       }
 
       await batch.commit();
-      
+
       toast.success(`${dataReadyToImport.length} data komitmen berhasil diimport!`);
       setShowImportModal(false);
       setImportPreview([]);
       setImportErrors([]);
-      
+
       const needRealisasiData = savedIds.filter(item => item.needRealisasi);
       if (needRealisasiData.length > 0) {
         setImportedDataNeedRealisasi(needRealisasiData);
@@ -1130,7 +1130,7 @@ const fetchMasterAP = async () => {
         `Berhasil import ${dataReadyToImport.length} data komitmen. Silakan isi realisasi untuk setiap data.`,
         { action: 'import', count: dataReadyToImport.length }
       );
-      
+
     } catch (error) {
       console.error('Error importing:', error);
       toast.error('Gagal import data');
@@ -1192,7 +1192,7 @@ const fetchMasterAP = async () => {
       setLoading(true);
 
       const currentData = importedDataNeedRealisasi[currentImportIndex];
-      const hasRealisasiData = realisasiRows.some(row => 
+      const hasRealisasiData = realisasiRows.some(row =>
         row.realisasi && parseRupiahInput(row.realisasi) > 0
       );
 
@@ -1243,7 +1243,7 @@ const fetchMasterAP = async () => {
         })),
         namaPenyedia: formData.namaPenyedia,
         kualifikasiPenyedia: formData.kualifikasiPenyedia,
-        nilaiKontrakKeseluruhan: parseRupiahInput(formData.nilaiKontrakKeseluruhan), 
+        nilaiKontrakKeseluruhan: parseRupiahInput(formData.nilaiKontrakKeseluruhan),
         nilaiPDN: parseRupiahInput(formData.nilaiPDN),
         nilaiTKDN: parseRupiahInput(formData.nilaiTKDN),
         nilaiImpor: parseRupiahInput(formData.nilaiImpor),
@@ -1252,7 +1252,7 @@ const fetchMasterAP = async () => {
         progres: formData.progres,
         sisaPembayaran: parseRupiahInput(formData.sisaPembayaran),
         keterangan: formData.keterangan,
-        needRealisasi: false, 
+        needRealisasi: false,
         updatedAt: new Date(),
         updatedBy: user?.email || user?.displayName || ''
       };
@@ -1359,72 +1359,72 @@ const fetchMasterAP = async () => {
     return new Date().getFullYear();
   };
 
-const handleNewRealisasi = () => {
-  setFormData(prev => ({
-    ...prev,
-    namaPenyedia: '',
-    kualifikasiPenyedia: 'UMKM',
-    nilaiPDN: '',
-    nilaiTKDN: '',
-    nilaiImpor: '',
-    namaPengadaanRealisasi: '',
-    metodePemilihanRealisasi: formData.usulanMetodePemilihan,
-    progres: '0',
-    sisaPembayaran: formData.jenisPaket === 'Multi Year (MY)' 
-      ? formData.komitmenKeseluruhan 
-      : formData.nilaiKomitmen,
-    keterangan: ''
-  }));
-  
-  setRealisasiRows([{
-    id: Date.now(),
-    tahunRealisasi: '',
-    bulanRealisasi: '',
-    realisasi: '',
-    nomorInvoice: '',
-    tanggalInvoice: '',
-    dokumen: null
-  }]);
-  
-  setIsAddingNewRealisasi(true);
-  toast.info('Mode: Tambah Realisasi Baru. Field realisasi telah di-reset.');
-};
-
-const handleCancelNewRealisasi = () => {
-  setIsAddingNewRealisasi(false);
-  
-  if (editMode && selectedKomitmen) {
-    if (selectedKomitmen.realisasiDetail && selectedKomitmen.realisasiDetail.length > 0) {
-      setRealisasiRows(selectedKomitmen.realisasiDetail.map(detail => ({
-        id: Date.now() + Math.random(),
-        tahunRealisasi: detail.tahunRealisasi || '',
-        bulanRealisasi: detail.bulanRealisasi || '',
-        realisasi: formatRupiahInput(detail.realisasi?.toString() || ''),
-        nomorInvoice: detail.nomorInvoice || '',
-        tanggalInvoice: detail.tanggalInvoice || '',
-        dokumen: detail.dokumen || null
-      })));
-    }
-    
+  const handleNewRealisasi = () => {
     setFormData(prev => ({
       ...prev,
-      namaPenyedia: selectedKomitmen.namaPenyedia || '',
-      kualifikasiPenyedia: selectedKomitmen.kualifikasiPenyedia || 'UMKM',
-      nilaiPDN: formatRupiahInput(selectedKomitmen.nilaiPDN?.toString() || ''),
-      nilaiTKDN: formatRupiahInput(selectedKomitmen.nilaiTKDN?.toString() || ''),
-      nilaiImpor: formatRupiahInput(selectedKomitmen.nilaiImpor?.toString() || ''),
-      namaPengadaanRealisasi: selectedKomitmen.namaPengadaanRealisasi || '',
-      metodePemilihanRealisasi: selectedKomitmen.metodePemilihanRealisasi || '',
-      progres: selectedKomitmen.progres || '',
-      sisaPembayaran: formatRupiahInput(selectedKomitmen.sisaPembayaran?.toString() || ''),
-      keterangan: selectedKomitmen.keterangan || ''
+      namaPenyedia: '',
+      kualifikasiPenyedia: 'UMKM',
+      nilaiPDN: '',
+      nilaiTKDN: '',
+      nilaiImpor: '',
+      namaPengadaanRealisasi: '',
+      metodePemilihanRealisasi: formData.usulanMetodePemilihan,
+      progres: '0',
+      sisaPembayaran: formData.jenisPaket === 'Multi Year (MY)'
+        ? formData.komitmenKeseluruhan
+        : formData.nilaiKomitmen,
+      keterangan: ''
     }));
-  }
-  
-  toast.info('Mode: Edit Realisasi Existing');
-};
 
-const isRealisasiEditable = !editMode || (editMode && selectedKomitmen?.needRealisasi) || isAddingNewRealisasi;
+    setRealisasiRows([{
+      id: Date.now(),
+      tahunRealisasi: '',
+      bulanRealisasi: '',
+      realisasi: '',
+      nomorInvoice: '',
+      tanggalInvoice: '',
+      dokumen: null
+    }]);
+
+    setIsAddingNewRealisasi(true);
+    toast.info('Mode: Tambah Realisasi Baru. Field realisasi telah di-reset.');
+  };
+
+  const handleCancelNewRealisasi = () => {
+    setIsAddingNewRealisasi(false);
+
+    if (editMode && selectedKomitmen) {
+      if (selectedKomitmen.realisasiDetail && selectedKomitmen.realisasiDetail.length > 0) {
+        setRealisasiRows(selectedKomitmen.realisasiDetail.map(detail => ({
+          id: Date.now() + Math.random(),
+          tahunRealisasi: detail.tahunRealisasi || '',
+          bulanRealisasi: detail.bulanRealisasi || '',
+          realisasi: formatRupiahInput(detail.realisasi?.toString() || ''),
+          nomorInvoice: detail.nomorInvoice || '',
+          tanggalInvoice: detail.tanggalInvoice || '',
+          dokumen: detail.dokumen || null
+        })));
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        namaPenyedia: selectedKomitmen.namaPenyedia || '',
+        kualifikasiPenyedia: selectedKomitmen.kualifikasiPenyedia || 'UMKM',
+        nilaiPDN: formatRupiahInput(selectedKomitmen.nilaiPDN?.toString() || ''),
+        nilaiTKDN: formatRupiahInput(selectedKomitmen.nilaiTKDN?.toString() || ''),
+        nilaiImpor: formatRupiahInput(selectedKomitmen.nilaiImpor?.toString() || ''),
+        namaPengadaanRealisasi: selectedKomitmen.namaPengadaanRealisasi || '',
+        metodePemilihanRealisasi: selectedKomitmen.metodePemilihanRealisasi || '',
+        progres: selectedKomitmen.progres || '',
+        sisaPembayaran: formatRupiahInput(selectedKomitmen.sisaPembayaran?.toString() || ''),
+        keterangan: selectedKomitmen.keterangan || ''
+      }));
+    }
+
+    toast.info('Mode: Edit Realisasi Existing');
+  };
+
+  const isRealisasiEditable = !editMode || (editMode && selectedKomitmen?.needRealisasi) || isAddingNewRealisasi;
 
   const months = [
     { value: 1, label: 'Januari' }, { value: 2, label: 'Februari' },
@@ -1437,15 +1437,15 @@ const isRealisasiEditable = !editMode || (editMode && selectedKomitmen?.needReal
 
   const isKomitmenDisabled = false;
   const handleOpenApproval = (item, action) => {
-  setSelectedApprovalItem(item);
-  setApprovalAction(action);
-  setApprovalNote('');
-  setShowApprovalModal(true);
-};
+    setSelectedApprovalItem(item);
+    setApprovalAction(action);
+    setApprovalNote('');
+    setShowApprovalModal(true);
+  };
 
-    const handleApprove = async () => {
+  const handleApprove = async () => {
     if (!selectedApprovalItem) return;
-    
+
     setLoading(true);
     try {
       const docRef = doc(db, 'komitmen', selectedApprovalItem.id);
@@ -1470,12 +1470,12 @@ const isRealisasiEditable = !editMode || (editMode && selectedKomitmen?.needReal
       });
 
       toast.dismiss();
-    
-    // ✅ Delay sebelum show toast baru
-    await new Promise(resolve => setTimeout(resolve, 100));
-      
+
+      // ✅ Delay sebelum show toast baru
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       toast.success(`Komitmen ${selectedApprovalItem.idPaketMonitoring} berhasil disetujui!`);
-      
+
       // ✅ Kirim notifikasi terlebih dahulu
       try {
         await addNotification(
@@ -1483,8 +1483,8 @@ const isRealisasiEditable = !editMode || (editMode && selectedKomitmen?.needReal
           'success',
           'Komitmen Disetujui',
           `Komitmen "${selectedApprovalItem.namaPaket}" telah disetujui oleh admin`,
-          { 
-            komitmenId: selectedApprovalItem.id, 
+          {
+            komitmenId: selectedApprovalItem.id,
             action: 'approved',
             approvedBy: user?.email || user?.displayName
           }
@@ -1493,14 +1493,14 @@ const isRealisasiEditable = !editMode || (editMode && selectedKomitmen?.needReal
         console.error('Error sending notification:', notifError);
       }
 
-      
-      
+
+
       setShowApprovalModal(false);
       setSelectedApprovalItem(null);
-      setApprovalNote('');      
+      setApprovalNote('');
       setKomitmenList(prev => prev.map(k =>
         k.id === selectedApprovalItem.id ? { ...k, ...approveData } : k
-      ));      
+      ));
     } catch (error) {
       console.error('Error approving komitmen:', error);
       toast.error('Gagal menyetujui komitmen: ' + error.message);
@@ -1511,12 +1511,12 @@ const isRealisasiEditable = !editMode || (editMode && selectedKomitmen?.needReal
 
   const handleReject = async () => {
     if (!selectedApprovalItem) return;
-    
+
     if (!approvalNote || approvalNote.trim() === '') {
       toast.error('Alasan penolakan wajib diisi');
       return;
     }
-    
+
     setLoading(true);
     try {
       const rejectData = {
@@ -1533,19 +1533,19 @@ const isRealisasiEditable = !editMode || (editMode && selectedKomitmen?.needReal
       await updateDoc(doc(db, 'komitmen', selectedApprovalItem.id), rejectData);
 
       toast.dismiss();
-    
+
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       toast.success(`Komitmen ${selectedApprovalItem.idPaketMonitoring} ditolak. PIC dapat mengedit ulang.`);
-      
+
       try {
         await addNotification(
           selectedApprovalItem.idUser,
           'warning',
           'Komitmen Ditolak - Perlu Revisi',
           `Komitmen "${selectedApprovalItem.namaPaket}" ditolak oleh admin. Silakan perbaiki dan submit ulang.`,
-          { 
-            komitmenId: selectedApprovalItem.id, 
+          {
+            komitmenId: selectedApprovalItem.id,
             idPaketMonitoring: selectedApprovalItem.idPaketMonitoring,
             action: 'rejected',
             rejectedBy: user?.email || user?.displayName,
@@ -1557,15 +1557,15 @@ const isRealisasiEditable = !editMode || (editMode && selectedKomitmen?.needReal
       } catch (notifError) {
         console.error('Error sending notification:', notifError);
       }
-      
+
       // ✅ Close modal dan reset state
       setShowApprovalModal(false);
       setSelectedApprovalItem(null);
       setApprovalNote('');
       setKomitmenList(prev => prev.map(k =>
-      k.id === selectedApprovalItem.id ? { ...k, ...rejectData } : k
-    ));
-      
+        k.id === selectedApprovalItem.id ? { ...k, ...rejectData } : k
+      ));
+
     } catch (error) {
       console.error('Error rejecting komitmen:', error);
       toast.error('Gagal menolak komitmen: ' + error.message);
@@ -1582,7 +1582,7 @@ const isRealisasiEditable = !editMode || (editMode && selectedKomitmen?.needReal
     try {
       setLoading(true);
       const komitmenRef = doc(db, 'komitmen', item.id);
-      
+
       await updateDoc(komitmenRef, {
         status: 'selesai',
         completedBy: user.email,
@@ -1597,8 +1597,8 @@ const isRealisasiEditable = !editMode || (editMode && selectedKomitmen?.needReal
           'success',
           'Komitmen Selesai',
           `Paket "${item.namaPaket}" telah ditandai sebagai SELESAI oleh Admin.`,
-          { 
-            komitmenId: item.id, 
+          {
+            komitmenId: item.id,
             action: 'completed',
             completedBy: user.email
           }
@@ -1615,7 +1615,7 @@ const isRealisasiEditable = !editMode || (editMode && selectedKomitmen?.needReal
       };
       setKomitmenList(prev => prev.map(k =>
         k.id === item.id ? { ...k, ...completedData } : k
-      ));      
+      ));
     } catch (error) {
       console.error('Error marking as completed:', error);
       toast.error('Gagal menandai komitmen sebagai selesai: ' + error.message);
@@ -1624,101 +1624,101 @@ const isRealisasiEditable = !editMode || (editMode && selectedKomitmen?.needReal
     }
   };
 
-const calculateSummaryPerPeriode = () => {
-  const currentYear = new Date().getFullYear().toString();
-  const isMY = formData.jenisPaket === 'Multi Year (MY)';
+  const calculateSummaryPerPeriode = () => {
+    const currentYear = new Date().getFullYear().toString();
+    const isMY = formData.jenisPaket === 'Multi Year (MY)';
 
-  // Untuk MY: filter baris berdasarkan tahun berjalan
-  // Untuk SY / mode tambah realisasi baru: gunakan semua baris saat ini
-  let rowsForPeriode;
-  if (isAddingNewRealisasi) {
-    // Mode tambah baru: hanya baris yang sedang diinput
-    rowsForPeriode = realisasiRows;
-  } else if (isMY) {
-    // MY edit mode: filter hanya baris tahun berjalan
-    const filtered = realisasiRows.filter(row => {
-      if (row.tahunRealisasi) return row.tahunRealisasi.toString() === currentYear;
-      if (row.tanggalInvoice) return new Date(row.tanggalInvoice).getFullYear().toString() === currentYear;
-      return true; // Data lama tanpa tag tahun: ikutkan agar tidak hilang
-    });
-    rowsForPeriode = filtered;
-  } else {
-    // SY: semua baris adalah tahun berjalan
-    rowsForPeriode = realisasiRows;
-  }
+    // Untuk MY: filter baris berdasarkan tahun berjalan
+    // Untuk SY / mode tambah realisasi baru: gunakan semua baris saat ini
+    let rowsForPeriode;
+    if (isAddingNewRealisasi) {
+      // Mode tambah baru: hanya baris yang sedang diinput
+      rowsForPeriode = realisasiRows;
+    } else if (isMY) {
+      // MY edit mode: filter hanya baris tahun berjalan
+      const filtered = realisasiRows.filter(row => {
+        if (row.tahunRealisasi) return row.tahunRealisasi.toString() === currentYear;
+        if (row.tanggalInvoice) return new Date(row.tanggalInvoice).getFullYear().toString() === currentYear;
+        return true; // Data lama tanpa tag tahun: ikutkan agar tidak hilang
+      });
+      rowsForPeriode = filtered;
+    } else {
+      // SY: semua baris adalah tahun berjalan
+      rowsForPeriode = realisasiRows;
+    }
 
-  const totalRealisasiPeriode = rowsForPeriode.reduce((sum, row) => 
-    sum + parseRupiahInput(row.realisasi), 0
-  );
-  const nilaiKomitmenTahunIni = parseRupiahInput(formData.nilaiKomitmen);
-  
-  const progressRaw = nilaiKomitmenTahunIni > 0 
-    ? ((totalRealisasiPeriode / nilaiKomitmenTahunIni) * 100).toFixed(2) 
-    : '0';
-  // Batasi progress per periode maksimal 100%
-  const progress = Math.min(parseFloat(progressRaw), 100).toFixed(2);
-  const sisa = nilaiKomitmenTahunIni - totalRealisasiPeriode;
-  
-  return {
-    progress,
-    sisa: formatRupiahInput(sisa.toString()),
-    total: formatRupiahInput(totalRealisasiPeriode.toString())
+    const totalRealisasiPeriode = rowsForPeriode.reduce((sum, row) =>
+      sum + parseRupiahInput(row.realisasi), 0
+    );
+    const nilaiKomitmenTahunIni = parseRupiahInput(formData.nilaiKomitmen);
+
+    const progressRaw = nilaiKomitmenTahunIni > 0
+      ? ((totalRealisasiPeriode / nilaiKomitmenTahunIni) * 100).toFixed(2)
+      : '0';
+    // Batasi progress per periode maksimal 100%
+    const progress = Math.min(parseFloat(progressRaw), 100).toFixed(2);
+    const sisa = nilaiKomitmenTahunIni - totalRealisasiPeriode;
+
+    return {
+      progress,
+      sisa: formatRupiahInput(sisa.toString()),
+      total: formatRupiahInput(totalRealisasiPeriode.toString())
+    };
   };
-};
 
-const calculateSummaryKeseluruhan = () => {
-  const totalRealisasiPeriode = realisasiRows.reduce((sum, row) => 
-    sum + parseRupiahInput(row.realisasi), 0
-  );
-  
-  let totalRealisasiKeseluruhan = totalRealisasiPeriode;
-  if (isAddingNewRealisasi && editMode && selectedKomitmen) {
-    const realisasiLama = selectedKomitmen.realisasi || 0;
-    totalRealisasiKeseluruhan = realisasiLama + totalRealisasiPeriode;
-  }
-  
-  const isMY = formData.jenisPaket === 'Multi Year (MY)';
-  const nilaiKontrakValue = parseRupiahInput(formData.nilaiKontrakKeseluruhan);
-  const nilaiKomitmenTahunIni = parseRupiahInput(formData.nilaiKomitmen);
-  const nilaiKomitmenKeseluruhan = parseRupiahInput(formData.komitmenKeseluruhan);
-  
-  let nilaiReferensiKeseluruhan = 0;
-  if (isMY) {
-    nilaiReferensiKeseluruhan = nilaiKontrakValue > 0 ? nilaiKontrakValue : nilaiKomitmenKeseluruhan;
-  } else {
-    nilaiReferensiKeseluruhan = nilaiKontrakValue > 0 ? nilaiKontrakValue : nilaiKomitmenTahunIni;
-  }
-  
-  const progress = nilaiReferensiKeseluruhan > 0 
-    ? ((totalRealisasiKeseluruhan / nilaiReferensiKeseluruhan) * 100).toFixed(2) 
-    : '0';
-  const sisa = nilaiReferensiKeseluruhan - totalRealisasiKeseluruhan;
-  
-  return {
-    progress,
-    sisa: formatRupiahInput(sisa.toString()),
-    total: formatRupiahInput(totalRealisasiKeseluruhan.toString())
+  const calculateSummaryKeseluruhan = () => {
+    const totalRealisasiPeriode = realisasiRows.reduce((sum, row) =>
+      sum + parseRupiahInput(row.realisasi), 0
+    );
+
+    let totalRealisasiKeseluruhan = totalRealisasiPeriode;
+    if (isAddingNewRealisasi && editMode && selectedKomitmen) {
+      const realisasiLama = selectedKomitmen.realisasi || 0;
+      totalRealisasiKeseluruhan = realisasiLama + totalRealisasiPeriode;
+    }
+
+    const isMY = formData.jenisPaket === 'Multi Year (MY)';
+    const nilaiKontrakValue = parseRupiahInput(formData.nilaiKontrakKeseluruhan);
+    const nilaiKomitmenTahunIni = parseRupiahInput(formData.nilaiKomitmen);
+    const nilaiKomitmenKeseluruhan = parseRupiahInput(formData.komitmenKeseluruhan);
+
+    let nilaiReferensiKeseluruhan = 0;
+    if (isMY) {
+      nilaiReferensiKeseluruhan = nilaiKontrakValue > 0 ? nilaiKontrakValue : nilaiKomitmenKeseluruhan;
+    } else {
+      nilaiReferensiKeseluruhan = nilaiKontrakValue > 0 ? nilaiKontrakValue : nilaiKomitmenTahunIni;
+    }
+
+    const progress = nilaiReferensiKeseluruhan > 0
+      ? ((totalRealisasiKeseluruhan / nilaiReferensiKeseluruhan) * 100).toFixed(2)
+      : '0';
+    const sisa = nilaiReferensiKeseluruhan - totalRealisasiKeseluruhan;
+
+    return {
+      progress,
+      sisa: formatRupiahInput(sisa.toString()),
+      total: formatRupiahInput(totalRealisasiKeseluruhan.toString())
+    };
   };
-};
 
   return (
     <>
       <NavigationBar />
       <div className="d-flex">
         <Sidebar />
-        <Container 
-            fluid 
-            style={{ 
-              marginLeft: '250px',
-              paddingTop: '100px',
-              paddingLeft: '1.5rem',
-              paddingRight: '1.5rem',
-              paddingBottom: '1.5rem',
-              minHeight: '100vh'
-            }}
-          >
-                    <ToastContainer 
-            position="top-right" 
+        <Container
+          fluid
+          style={{
+            marginLeft: '250px',
+            paddingTop: '100px',
+            paddingLeft: '1.5rem',
+            paddingRight: '1.5rem',
+            paddingBottom: '1.5rem',
+            minHeight: '100vh'
+          }}
+        >
+          <ToastContainer
+            position="top-right"
             autoClose={3000}
             hideProgressBar={false}
             newestOnTop={true}
@@ -1730,7 +1730,7 @@ const calculateSummaryKeseluruhan = () => {
             limit={3}  // ← Batasi maksimal 3 toast sekaligus
             transition={Slide}  // ← Gunakan Slide transition
           />
-          
+
           <Card className="shadow-sm mb-4">
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-3">
@@ -1745,9 +1745,9 @@ const calculateSummaryKeseluruhan = () => {
                   <Button variant="primary" size="sm" onClick={handleExport}>
                     <FaFileExport className="me-1" /> Export Excel
                   </Button>
-                  <Button 
-                    variant="info" 
-                    size="sm" 
+                  <Button
+                    variant="info"
+                    size="sm"
                     onClick={() => {
                       const link = document.createElement('a');
                       link.href = '/templates/Template_Import_Komitmen_Awal.xlsx';
@@ -1914,9 +1914,9 @@ const calculateSummaryKeseluruhan = () => {
                                 <Button variant="info" size="sm" onClick={() => { setSelectedKomitmen(item); setShowDetailModal(true); }}>
                                   <FaEye />
                                 </Button>
-                                 <Button 
-                                  variant="warning" 
-                                  size="sm" 
+                                <Button
+                                  variant="warning"
+                                  size="sm"
                                   onClick={() => handleEdit(item)}
                                   disabled={item.status === 'selesai'}
                                   title={item.status === 'selesai' ? 'Komitmen sudah selesai' : 'Edit'}
@@ -1925,7 +1925,7 @@ const calculateSummaryKeseluruhan = () => {
                                 </Button>
                                 <Button variant="danger" size="sm" onClick={() => handleDelete(item.id)}>
                                   <FaTrash />
-                                </Button>                                
+                                </Button>
                                 {item.approvalStatus === 'draft' && (
                                   <>
                                     <Button variant="success" size="sm" onClick={() => handleOpenApproval(item, 'approve')} title="Approve komitmen">
@@ -1935,7 +1935,7 @@ const calculateSummaryKeseluruhan = () => {
                                       <FaTimesCircle />
                                     </Button>
                                   </>
-                                )}                                
+                                )}
                                 {item.approvalStatus === 'approved' && item.status !== 'selesai' && (
                                   <Button variant="success" size="sm" onClick={() => handleMarkAsCompleted(item)} title="Tandai Selesai">
                                     <FaCheckCircle /> Selesai
@@ -1971,7 +1971,7 @@ const calculateSummaryKeseluruhan = () => {
             </Alert>
           )}
           <Alert variant="info">
-            <strong>Total data:</strong> {importPreview.length} baris akan diimport<br/>
+            <strong>Total data:</strong> {importPreview.length} baris akan diimport<br />
             <small className="text-muted">⚠️ Setelah import, Anda akan diminta untuk mengisi Tab Realisasi untuk setiap data</small>
           </Alert>
           <div className="table-responsive">
@@ -2008,7 +2008,7 @@ const calculateSummaryKeseluruhan = () => {
         </Modal.Footer>
       </Modal>
 
-       {/* MODAL FORM */}
+      {/* MODAL FORM */}
       <Modal show={showFormModal} onHide={handleCloseFormModal} size="xl" centered>
         <Modal.Header closeButton>
           <Modal.Title>
@@ -2029,15 +2029,15 @@ const calculateSummaryKeseluruhan = () => {
                 )}
 
                 <h6 className="fw-bold mb-3 mt-3">Informasi Paket</h6>
-                
+
                 <Row>
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>ID Paket Monitoring</Form.Label>
-                      <Form.Control 
-                        type="text" 
-                        name="idPaketMonitoring" 
-                        value={formData.idPaketMonitoring} 
+                      <Form.Control
+                        type="text"
+                        name="idPaketMonitoring"
+                        value={formData.idPaketMonitoring}
                         onChange={handleFormChange}
                         placeholder="Auto-generate (SY.2025.XXX.12345)"
                         disabled
@@ -2049,9 +2049,9 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Jenis Paket <span className="text-danger">*</span></Form.Label>
-                      <Form.Select 
-                        name="jenisPaket" 
-                        value={formData.jenisPaket} 
+                      <Form.Select
+                        name="jenisPaket"
+                        value={formData.jenisPaket}
                         onChange={handleFormChange}
                         required
                         disabled={isKomitmenDisabled}
@@ -2068,10 +2068,10 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>ID RUP</Form.Label>
-                      <Form.Control 
-                        type="text" 
-                        name="idRUP" 
-                        value={formData.idRUP} 
+                      <Form.Control
+                        type="text"
+                        name="idRUP"
+                        value={formData.idRUP}
                         onChange={handleFormChange}
                         placeholder='opsional'
                         disabled={isKomitmenDisabled}
@@ -2083,9 +2083,9 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Nama AP <span className="text-danger">*</span></Form.Label>
-                      <Form.Select 
-                        name="namaAP" 
-                        value={formData.namaAP} 
+                      <Form.Select
+                        name="namaAP"
+                        value={formData.namaAP}
                         onChange={handleFormChange}
                         required
                         disabled={isKomitmenDisabled}
@@ -2107,10 +2107,10 @@ const calculateSummaryKeseluruhan = () => {
 
                 <Form.Group className="mb-3">
                   <Form.Label>Nama Paket <span className="text-danger">*</span></Form.Label>
-                  <Form.Control 
-                    type="text" 
-                    name="namaPaket" 
-                    value={formData.namaPaket} 
+                  <Form.Control
+                    type="text"
+                    name="namaPaket"
+                    value={formData.namaPaket}
                     onChange={handleFormChange}
                     required
                     disabled={isKomitmenDisabled}
@@ -2122,9 +2122,9 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Jenis Anggaran <span className="text-danger">*</span></Form.Label>
-                      <Form.Select 
-                        name="jenisAnggaran" 
-                        value={formData.jenisAnggaran} 
+                      <Form.Select
+                        name="jenisAnggaran"
+                        value={formData.jenisAnggaran}
                         onChange={handleFormChange}
                         required
                         disabled={isKomitmenDisabled}
@@ -2139,9 +2139,9 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Jenis Pengadaan <span className="text-danger">*</span></Form.Label>
-                      <Form.Select 
-                        name="jenisPengadaan" 
-                        value={formData.jenisPengadaan} 
+                      <Form.Select
+                        name="jenisPengadaan"
+                        value={formData.jenisPengadaan}
                         onChange={handleFormChange}
                         required
                         disabled={isKomitmenDisabled}
@@ -2160,9 +2160,9 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Usulan Metode Pemilihan <span className="text-danger">*</span></Form.Label>
-                      <Form.Select 
-                        name="usulanMetodePemilihan" 
-                        value={formData.usulanMetodePemilihan} 
+                      <Form.Select
+                        name="usulanMetodePemilihan"
+                        value={formData.usulanMetodePemilihan}
                         onChange={(e) => {
                           handleFormChange(e);
                           // Jika bukan Pengadaan Langsung, auto set ke Non PaDi
@@ -2171,8 +2171,8 @@ const calculateSummaryKeseluruhan = () => {
                           }
                         }}
                         required
-                        disabled={isKomitmenDisabled} 
-                        className={isKomitmenDisabled ? "bg-light" : ""} 
+                        disabled={isKomitmenDisabled}
+                        className={isKomitmenDisabled ? "bg-light" : ""}
                       >
                         <option value="Tender/Seleksi Umum">Tender/Seleksi Umum</option>
                         <option value="Tender/Seleksi Terbatas">Tender/Seleksi Terbatas</option>
@@ -2186,9 +2186,9 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Status PaDi</Form.Label>
-                      <Form.Select 
-                        name="statusPadi" 
-                        value={formData.statusPadi} 
+                      <Form.Select
+                        name="statusPadi"
+                        value={formData.statusPadi}
                         onChange={handleFormChange}
                         disabled={formData.usulanMetodePemilihan !== 'Pengadaan Langsung' || isKomitmenDisabled}
                         className={formData.usulanMetodePemilihan !== 'Pengadaan Langsung' || isKomitmenDisabled ? "bg-light" : ""}
@@ -2197,8 +2197,8 @@ const calculateSummaryKeseluruhan = () => {
                         <option value="PaDi">PaDi</option>
                       </Form.Select>
                       <Form.Text className="text-muted">
-                        {formData.usulanMetodePemilihan === 'Pengadaan Langsung' 
-                          ? 'Pilih PaDi atau Non PaDi' 
+                        {formData.usulanMetodePemilihan === 'Pengadaan Langsung'
+                          ? 'Pilih PaDi atau Non PaDi'
                           : 'Otomatis Non PaDi untuk metode ini'}
                       </Form.Text>
                     </Form.Group>
@@ -2209,10 +2209,10 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Komitmen Tahun Berjalan (Rp) <span className="text-danger">*</span></Form.Label>
-                      <Form.Control 
-                        type="text" 
-                        name="nilaiKomitmen" 
-                        value={formData.nilaiKomitmen} 
+                      <Form.Control
+                        type="text"
+                        name="nilaiKomitmen"
+                        value={formData.nilaiKomitmen}
                         onChange={(e) => handleRupiahChange(e, 'nilaiKomitmen')}
                         required
                         disabled={isKomitmenDisabled}
@@ -2224,13 +2224,13 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>
-                        Komitmen Keseluruhan (Rp) 
+                        Komitmen Keseluruhan (Rp)
                         {formData.jenisPaket === 'Multi Year (MY)' && <span className="text-danger">*</span>}
                       </Form.Label>
-                      <Form.Control 
-                        type="text" 
-                        name="komitmenKeseluruhan" 
-                        value={formData.komitmenKeseluruhan} 
+                      <Form.Control
+                        type="text"
+                        name="komitmenKeseluruhan"
+                        value={formData.komitmenKeseluruhan}
                         onChange={(e) => handleRupiahChange(e, 'komitmenKeseluruhan')}
                         disabled={isKomitmenDisabled}
                         className={isKomitmenDisabled ? "bg-light" : ""}
@@ -2240,7 +2240,7 @@ const calculateSummaryKeseluruhan = () => {
                           Wajib diisi untuk Multi Year
                         </Form.Text>
                       )}
-                       {formData.jenisPaket === 'Single Year (SY)' && (
+                      {formData.jenisPaket === 'Single Year (SY)' && (
                         <Form.Text className="text-danger">
                           Wajib diisi untuk Single Year
                         </Form.Text>
@@ -2310,12 +2310,12 @@ const calculateSummaryKeseluruhan = () => {
                 <hr className="my-4" />
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <h6 className="fw-bold mb-0">Rencana Realisasi</h6>
-                  <Button 
-                    variant="primary" 
-                    size="sm" 
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={addRencanaRow}
                     disabled={
-                      isKomitmenDisabled || 
+                      isKomitmenDisabled ||
                       (() => {
                         const totalRencana = rencanaRows.reduce((sum, row) => sum + parseRupiahInput(row.nilaiRencana), 0);
                         const komitmenKeseluruhan = parseRupiahInput(formData.komitmenKeseluruhan);
@@ -2336,15 +2336,15 @@ const calculateSummaryKeseluruhan = () => {
                   </Button>
                 </div>
                 {(() => {
-                    const totalRencana = rencanaRows.reduce((sum, row) => sum + parseRupiahInput(row.nilaiRencana), 0);
-                    const komitmenKeseluruhan = parseRupiahInput(formData.komitmenKeseluruhan);
-                    return komitmenKeseluruhan > 0 && totalRencana >= komitmenKeseluruhan && (
-                      <Alert variant="success" className="mb-3">
-                        <strong>Total Rencana sudah sesuai dengan Komitmen Keseluruhan</strong><br/>
-                        <small>Anda tidak dapat menambah rencana lagi.</small>
-                      </Alert>
-                    );
-                  })()}
+                  const totalRencana = rencanaRows.reduce((sum, row) => sum + parseRupiahInput(row.nilaiRencana), 0);
+                  const komitmenKeseluruhan = parseRupiahInput(formData.komitmenKeseluruhan);
+                  return komitmenKeseluruhan > 0 && totalRencana >= komitmenKeseluruhan && (
+                    <Alert variant="success" className="mb-3">
+                      <strong>Total Rencana sudah sesuai dengan Komitmen Keseluruhan</strong><br />
+                      <small>Anda tidak dapat menambah rencana lagi.</small>
+                    </Alert>
+                  );
+                })()}
                 {formData.jenisPaket === 'Multi Year (MY)' && (
                   <Alert variant="info" className="mb-3">
                     <small><strong>Multi Year:</strong> Silakan isi tahun rencana untuk setiap periode</small>
@@ -2375,7 +2375,7 @@ const calculateSummaryKeseluruhan = () => {
                   <Row key={row.id} className="mb-2 align-items-center border-bottom pb-2">
                     {formData.jenisPaket === 'Multi Year (MY)' && (
                       <Col md={2}>
-                        <Form.Control 
+                        <Form.Control
                           type="number"
                           value={row.tahunRencana}
                           onChange={(e) => handleRencanaChange(index, 'tahunRencana', e.target.value)}
@@ -2388,9 +2388,9 @@ const calculateSummaryKeseluruhan = () => {
                         />
                       </Col>
                     )}
-                    
+
                     <Col md={formData.jenisPaket === 'Multi Year (MY)' ? 3 : 4}>
-                      <Form.Control 
+                      <Form.Control
                         type="text"
                         value={row.nilaiRencana}
                         onChange={(e) => handleRencanaRupiahChange(index, e.target.value)}
@@ -2400,9 +2400,9 @@ const calculateSummaryKeseluruhan = () => {
                         size="sm"
                       />
                     </Col>
-                    
+
                     <Col md={formData.jenisPaket === 'Multi Year (MY)' ? 3 : 4}>
-                      <Form.Select 
+                      <Form.Select
                         value={row.bulanRencana}
                         onChange={(e) => handleRencanaChange(index, 'bulanRencana', e.target.value)}
                         disabled={isKomitmenDisabled}
@@ -2415,9 +2415,9 @@ const calculateSummaryKeseluruhan = () => {
                         ))}
                       </Form.Select>
                     </Col>
-                    
+
                     <Col md={formData.jenisPaket === 'Multi Year (MY)' ? 3 : 3}>
-                      <Form.Control 
+                      <Form.Control
                         type="text"
                         value={row.keterangan}
                         onChange={(e) => handleRencanaChange(index, 'keterangan', e.target.value)}
@@ -2427,12 +2427,12 @@ const calculateSummaryKeseluruhan = () => {
                         size="sm"
                       />
                     </Col>
-                    
+
                     <Col md={1} className="text-center">
                       {rencanaRows.length > 1 && (
-                        <Button 
-                          variant="danger" 
-                          size="sm" 
+                        <Button
+                          variant="danger"
+                          size="sm"
                           onClick={() => removeRencanaRow(index)}
                           disabled={isKomitmenDisabled}
                         >
@@ -2458,11 +2458,11 @@ const calculateSummaryKeseluruhan = () => {
                 <Row>
                   <Col md={4}>
                     <Form.Group className="mb-3">
-                      <Form.Check 
-                        type="checkbox" 
-                        name="pdnCheckbox" 
-                        label="PDN" 
-                        checked={formData.pdnCheckbox} 
+                      <Form.Check
+                        type="checkbox"
+                        name="pdnCheckbox"
+                        label="PDN"
+                        checked={formData.pdnCheckbox}
                         onChange={handleFormChange}
                         disabled={isKomitmenDisabled}
                       />
@@ -2471,11 +2471,11 @@ const calculateSummaryKeseluruhan = () => {
 
                   <Col md={4}>
                     <Form.Group className="mb-3">
-                      <Form.Check 
-                        type="checkbox" 
-                        name="tkdnCheckbox" 
-                        label="TKDN" 
-                        checked={formData.tkdnCheckbox} 
+                      <Form.Check
+                        type="checkbox"
+                        name="tkdnCheckbox"
+                        label="TKDN"
+                        checked={formData.tkdnCheckbox}
                         onChange={handleFormChange}
                         disabled={isKomitmenDisabled}
                       />
@@ -2484,11 +2484,11 @@ const calculateSummaryKeseluruhan = () => {
 
                   <Col md={4}>
                     <Form.Group className="mb-3">
-                      <Form.Check 
-                        type="checkbox" 
-                        name="importCheckbox" 
-                        label="Import" 
-                        checked={formData.importCheckbox} 
+                      <Form.Check
+                        type="checkbox"
+                        name="importCheckbox"
+                        label="Import"
+                        checked={formData.importCheckbox}
                         onChange={handleFormChange}
                         disabled={isKomitmenDisabled}
                       />
@@ -2507,10 +2507,10 @@ const calculateSummaryKeseluruhan = () => {
                       <Col md={6}>
                         <Form.Group className="mb-3">
                           <Form.Label>Nilai Tahun Berjalan PDN (Rp) <span className="text-danger">*</span></Form.Label>
-                          <Form.Control 
-                            type="text" 
-                            name="nilaiTahunBerjalanPDN" 
-                            value={formData.nilaiTahunBerjalanPDN} 
+                          <Form.Control
+                            type="text"
+                            name="nilaiTahunBerjalanPDN"
+                            value={formData.nilaiTahunBerjalanPDN}
                             onChange={(e) => handleRupiahChange(e, 'nilaiTahunBerjalanPDN')}
                             required
                             disabled={isKomitmenDisabled}
@@ -2523,10 +2523,10 @@ const calculateSummaryKeseluruhan = () => {
                       <Col md={6}>
                         <Form.Group className="mb-3">
                           <Form.Label>Nilai Keseluruhan PDN (Rp) <span className="text-danger">*</span></Form.Label>
-                          <Form.Control 
-                            type="text" 
-                            name="nilaiKeseluruhanPDN" 
-                            value={formData.nilaiKeseluruhanPDN} 
+                          <Form.Control
+                            type="text"
+                            name="nilaiKeseluruhanPDN"
+                            value={formData.nilaiKeseluruhanPDN}
                             onChange={(e) => handleRupiahChange(e, 'nilaiKeseluruhanPDN')}
                             required
                             disabled={isKomitmenDisabled}
@@ -2549,10 +2549,10 @@ const calculateSummaryKeseluruhan = () => {
                       <Col md={6}>
                         <Form.Group className="mb-3">
                           <Form.Label>Nilai Tahun Berjalan TKDN (Rp) <span className="text-danger">*</span></Form.Label>
-                          <Form.Control 
-                            type="text" 
-                            name="nilaiTahunBerjalanTKDN" 
-                            value={formData.nilaiTahunBerjalanTKDN} 
+                          <Form.Control
+                            type="text"
+                            name="nilaiTahunBerjalanTKDN"
+                            value={formData.nilaiTahunBerjalanTKDN}
                             onChange={(e) => handleRupiahChange(e, 'nilaiTahunBerjalanTKDN')}
                             required
                             disabled={isKomitmenDisabled}
@@ -2565,10 +2565,10 @@ const calculateSummaryKeseluruhan = () => {
                       <Col md={6}>
                         <Form.Group className="mb-3">
                           <Form.Label>Nilai Keseluruhan TKDN (Rp) <span className="text-danger">*</span></Form.Label>
-                          <Form.Control 
-                            type="text" 
-                            name="nilaiKeseluruhanTKDN" 
-                            value={formData.nilaiKeseluruhanTKDN} 
+                          <Form.Control
+                            type="text"
+                            name="nilaiKeseluruhanTKDN"
+                            value={formData.nilaiKeseluruhanTKDN}
                             onChange={(e) => handleRupiahChange(e, 'nilaiKeseluruhanTKDN')}
                             required
                             disabled={isKomitmenDisabled}
@@ -2590,10 +2590,10 @@ const calculateSummaryKeseluruhan = () => {
                       <Col md={6}>
                         <Form.Group className="mb-3">
                           <Form.Label>Nilai Tahun Berjalan Import (Rp) <span className="text-danger">*</span></Form.Label>
-                          <Form.Control 
-                            type="text" 
-                            name="nilaiTahunBerjalanImport" 
-                            value={formData.nilaiTahunBerjalanImport} 
+                          <Form.Control
+                            type="text"
+                            name="nilaiTahunBerjalanImport"
+                            value={formData.nilaiTahunBerjalanImport}
                             onChange={(e) => handleRupiahChange(e, 'nilaiTahunBerjalanImport')}
                             required
                             disabled={isKomitmenDisabled}
@@ -2606,10 +2606,10 @@ const calculateSummaryKeseluruhan = () => {
                       <Col md={6}>
                         <Form.Group className="mb-3">
                           <Form.Label>Nilai Keseluruhan Import (Rp) <span className="text-danger">*</span></Form.Label>
-                          <Form.Control 
-                            type="text" 
-                            name="nilaiKeseluruhanImport" 
-                            value={formData.nilaiKeseluruhanImport} 
+                          <Form.Control
+                            type="text"
+                            name="nilaiKeseluruhanImport"
+                            value={formData.nilaiKeseluruhanImport}
                             onChange={(e) => handleRupiahChange(e, 'nilaiKeseluruhanImport')}
                             required
                             disabled={isKomitmenDisabled}
@@ -2627,11 +2627,11 @@ const calculateSummaryKeseluruhan = () => {
 
                 <Form.Group className="mb-3">
                   <Form.Label>Catatan Komitmen</Form.Label>
-                  <Form.Control 
-                    as="textarea" 
-                    rows={3} 
-                    name="catatanKomitmen" 
-                    value={formData.catatanKomitmen} 
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    name="catatanKomitmen"
+                    value={formData.catatanKomitmen}
                     onChange={handleFormChange}
                     placeholder="Catatan tambahan..."
                     disabled={isKomitmenDisabled}
@@ -2642,16 +2642,16 @@ const calculateSummaryKeseluruhan = () => {
 
               <Tab eventKey="realisasi" title="Realisasi">
                 <h6 className="fw-bold mb-3 mt-3 text-white bg-primary p-2">DATA KOMITMEN</h6>
-                
+
                 <Row>
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Nama Pengadaan (Komitmen)</Form.Label>
-                      <Form.Control 
+                      <Form.Control
                         size="sm"
-                        type="text" 
+                        type="text"
                         value={formData.namaPaket}
-                        disabled 
+                        disabled
                         className="bg-light"
                       />
                     </Form.Group>
@@ -2660,11 +2660,11 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Nilai Anggaran Keseluruhan (Komitmen)</Form.Label>
-                      <Form.Control 
+                      <Form.Control
                         size="sm"
-                        type="text" 
+                        type="text"
                         value={formData.komitmenKeseluruhan}
-                        disabled 
+                        disabled
                         className="bg-light"
                       />
                     </Form.Group>
@@ -2675,11 +2675,11 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Nilai Anggaran Tahun Berjalan (Komitmen)</Form.Label>
-                      <Form.Control 
+                      <Form.Control
                         size="sm"
-                        type="text" 
+                        type="text"
                         value={formData.nilaiKomitmen}
-                        disabled 
+                        disabled
                         className="bg-light"
                       />
                     </Form.Group>
@@ -2688,11 +2688,11 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Metode Pemilihan (Komitmen)</Form.Label>
-                      <Form.Control 
+                      <Form.Control
                         size="sm"
-                        type="text" 
+                        type="text"
                         value={formData.usulanMetodePemilihan}
-                        disabled 
+                        disabled
                         className="bg-light"
                       />
                     </Form.Group>
@@ -2703,11 +2703,11 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Jenis Pengadaan (Komitmen)</Form.Label>
-                      <Form.Control 
+                      <Form.Control
                         size="sm"
-                        type="text" 
+                        type="text"
                         value={formData.jenisPengadaan}
-                        disabled 
+                        disabled
                         className="bg-light"
                       />
                     </Form.Group>
@@ -2717,59 +2717,59 @@ const calculateSummaryKeseluruhan = () => {
                 <hr />
                 <h6 className="fw-bold mb-3 text-white bg-success p-2">DATA REALISASI (EDITABLE)</h6>
                 {editMode && (
-                <div className="d-flex justify-content-between align-items-center mb-3 p-3 bg-light border rounded">
-                  <div>
-                    {isAddingNewRealisasi ? (
-                      <Badge bg="success" className="px-3 py-2">
-                        Mode: Tambah Realisasi Baru
-                      </Badge>
-                    ) : (
-                      <Badge bg="info" className="px-3 py-2">
-                        <FaEdit className="me-2" /> Mode: Edit Realisasi Existing
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="d-flex gap-2">
-                    {!isAddingNewRealisasi && (
-                      <Button 
-                        variant="success" 
-                        size="sm" 
-                        onClick={handleNewRealisasi}
-                      >
-                        <FaPlus className="me-1" /> New Realisasi
-                      </Button>
-                    )}
-                    
-                    {isAddingNewRealisasi && (
-                      <Button 
-                        variant="secondary" 
-                        size="sm" 
-                        onClick={handleCancelNewRealisasi}
-                      >
-                        <FaTimes className="me-1" /> Cancel (Kembali ke Edit)
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
+                  <div className="d-flex justify-content-between align-items-center mb-3 p-3 bg-light border rounded">
+                    <div>
+                      {isAddingNewRealisasi ? (
+                        <Badge bg="success" className="px-3 py-2">
+                          Mode: Tambah Realisasi Baru
+                        </Badge>
+                      ) : (
+                        <Badge bg="info" className="px-3 py-2">
+                          <FaEdit className="me-2" /> Mode: Edit Realisasi Existing
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="d-flex gap-2">
+                      {!isAddingNewRealisasi && (
+                        <Button
+                          variant="success"
+                          size="sm"
+                          onClick={handleNewRealisasi}
+                        >
+                          <FaPlus className="me-1" /> New Realisasi
+                        </Button>
+                      )}
 
-              {isAddingNewRealisasi && (
-                <Alert variant="success" className="mb-3">
-                  <strong>Mode Tambah Realisasi Baru:</strong> Anda sedang menambahkan data realisasi baru. 
-                  Data realisasi lama tidak akan terhapus.<br/>
-                  <small className="text-muted">
-                    • Isi Nama Penyedia baru jika berbeda dengan realisasi sebelumnya<br/>
-                    • Klik "Cancel" untuk kembali ke mode edit existing
-                  </small>
-                </Alert>
-              )}
+                      {isAddingNewRealisasi && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={handleCancelNewRealisasi}
+                        >
+                          <FaTimes className="me-1" /> Cancel (Kembali ke Edit)
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {isAddingNewRealisasi && (
+                  <Alert variant="success" className="mb-3">
+                    <strong>Mode Tambah Realisasi Baru:</strong> Anda sedang menambahkan data realisasi baru.
+                    Data realisasi lama tidak akan terhapus.<br />
+                    <small className="text-muted">
+                      • Isi Nama Penyedia baru jika berbeda dengan realisasi sebelumnya<br />
+                      • Klik "Cancel" untuk kembali ke mode edit existing
+                    </small>
+                  </Alert>
+                )}
                 <Row>
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Nama Pengadaan (Realisasi)</Form.Label>
-                      <Form.Control 
+                      <Form.Control
                         size="sm"
-                        type="text" 
+                        type="text"
                         name="namaPengadaanRealisasi"
                         value={formData.namaPengadaanRealisasi || ''}
                         onChange={handleFormChange}
@@ -2781,10 +2781,10 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Nilai Kontrak Keseluruhan (Rp) <span className="text-danger">*</span></Form.Label>
-                      <Form.Control 
-                        type="text" 
-                        name="nilaiKontrakKeseluruhan" 
-                        value={formData.nilaiKontrakKeseluruhan} 
+                      <Form.Control
+                        type="text"
+                        name="nilaiKontrakKeseluruhan"
+                        value={formData.nilaiKontrakKeseluruhan}
                         onChange={(e) => handleRupiahChange(e, 'nilaiKontrakKeseluruhan')}
                         placeholder="Masukkan nilai kontrak keseluruhan"
                         className={isRealisasiEditable ? "bg-light" : "bg-success bg-opacity-10"}
@@ -2795,7 +2795,7 @@ const calculateSummaryKeseluruhan = () => {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Metode Pemilihan (Realisasi)</Form.Label>
-                      <Form.Select 
+                      <Form.Select
                         size="sm"
                         name="metodePemilihanRealisasi"
                         value={formData.metodePemilihanRealisasi || formData.usulanMetodePemilihan}
@@ -2811,38 +2811,38 @@ const calculateSummaryKeseluruhan = () => {
                     </Form.Group>
                   </Col>
                 </Row>
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Kualifikasi Penyedia</Form.Label>
-                    <Form.Select 
-                      size="sm"
-                      name="kualifikasiPenyedia" 
-                      value={formData.kualifikasiPenyedia || 'UMKM'} 
-                      onChange={handleFormChange}
-                      className={isRealisasiEditable ? "bg-light" : "bg-success bg-opacity-10"}
-                    >
-                      <option value="UMKM">UMKM</option>
-                      <option value="Non UMKM">Non UMKM</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Kualifikasi Penyedia</Form.Label>
+                      <Form.Select
+                        size="sm"
+                        name="kualifikasiPenyedia"
+                        value={formData.kualifikasiPenyedia || 'UMKM'}
+                        onChange={handleFormChange}
+                        className={isRealisasiEditable ? "bg-light" : "bg-success bg-opacity-10"}
+                      >
+                        <option value="UMKM">UMKM</option>
+                        <option value="Non UMKM">Non UMKM</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </Col>
 
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Nama Penyedia</Form.Label>
-                    <Form.Control 
-                      size="sm"
-                      type="text" 
-                      name="namaPenyedia" 
-                      value={formData.namaPenyedia || ''} 
-                      onChange={handleFormChange}
-                      placeholder="Masukkan nama penyedia"
-                      className={isRealisasiEditable ? "bg-light" : "bg-success bg-opacity-10"}
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Nama Penyedia</Form.Label>
+                      <Form.Control
+                        size="sm"
+                        type="text"
+                        name="namaPenyedia"
+                        value={formData.namaPenyedia || ''}
+                        onChange={handleFormChange}
+                        placeholder="Masukkan nama penyedia"
+                        className={isRealisasiEditable ? "bg-light" : "bg-success bg-opacity-10"}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
                 <hr className="my-4" />
                 <h6 className="fw-bold mb-3">Detail Realisasi per Periode</h6>
                 <Row className="mb-2 bg-light py-2 border rounded">
@@ -2865,163 +2865,174 @@ const calculateSummaryKeseluruhan = () => {
                     <Form.Label className="fw-bold small mb-0">Aksi</Form.Label>
                   </Col>
                 </Row>
-                  {realisasiRows.map((row, index) => {
-                    const isExistingRow = false; // Admin selalu bisa edit semua baris realisasi
-                      return (
-                        <Row key={row.id} className="mb-2 align-items-center border-bottom pb-2">
-                          <Col md={2}>
-                            <Form.Control 
-                              type="text" 
-                              value={row.realisasi || ''} 
-                              onChange={(e) => handleRealisasiRupiahChange(index, 'realisasi', e.target.value)}
-                              placeholder="0"
-                              disabled={isExistingRow}
-                              className={isExistingRow ? "bg-light" : "bg-success bg-opacity-10"}
-                              size="sm"
-                            />
-                          </Col>
-                          <Col md={2}>
-                            <Form.Control 
-                              type="date" 
-                              value={row.tanggalInvoice || ''} 
-                              onChange={(e) => handleRealisasiChange(index, 'tanggalInvoice', e.target.value)}
-                              disabled={isExistingRow}
-                              className={isExistingRow ? "bg-light" : "bg-success bg-opacity-10"}
-                              size="sm"
-                            />
-                          </Col>
-                          <Col md={2}>
-                            <Form.Control 
-                              type="text" 
-                              value={row.nomorInvoice || ''} 
-                              onChange={(e) => handleRealisasiChange(index, 'nomorInvoice', e.target.value)}
-                              placeholder="INV-001"
-                              disabled={isExistingRow}
-                              className={isExistingRow ? "bg-light" : "bg-success bg-opacity-10"}
-                              size="sm"
-                            />
-                          </Col>
-                           <Col md={2}>
-                            <Form.Select 
-                              value={row.bulanRealisasi || ''} 
-                              onChange={(e) => handleRealisasiChange(index, 'bulanRealisasi', e.target.value)}
-                              disabled={isExistingRow}
-                              className={isExistingRow ? "bg-light" : "bg-success bg-opacity-10"}
-                              size="sm"
-                            >
-                              <option value="">Pilih Bulan</option>
-                              {months.map(m => (
-                                <option key={m.value} value={m.value}>{m.label}</option>
-                              ))}
-                            </Form.Select>
-                          </Col>
-                          <Col md={2}>
-                            {row.dokumen ? (
-                              <Badge bg="success" className="w-100">File Terupload</Badge>
-                            ) : (
-                              <Form.Control 
-                                type="file" 
-                                onChange={(e) => handleRealisasiChange(index, 'dokumen', e.target.files[0])}
-                                accept=".pdf,.jpg,.jpeg,.png"
-                                disabled={isExistingRow}
-                                size="sm"
-                              />
-                            )}
-                          </Col>
-                          <Col md={2} className="text-center">
-                            {index === realisasiRows.length - 1 && (
-                              <Button 
-                                variant="primary" 
-                                size="sm" 
-                                onClick={addRealisasiRow}
-                                className="me-1"
-                              >
-                                <FaPlus />
-                              </Button>
-                            )}
-                            {!isExistingRow && realisasiRows.length > 1 && (
-                              <Button 
-                                variant="danger" 
-                                size="sm" 
-                                onClick={() => removeRealisasiRow(index)}
-                              >
-                                <FaTimes />
-                              </Button>
-                            )}
-                          </Col>
-                        </Row>
-                      );
-                    })}
+                {realisasiRows.map((row, index) => {
+                  const isExistingRow = false; // Admin selalu bisa edit semua baris realisasi
+                  return (
+                    <Row key={row.id} className="mb-2 align-items-center border-bottom pb-2">
+                      <Col md={2}>
+                        <Form.Control
+                          type="text"
+                          value={row.realisasi || ''}
+                          onChange={(e) => handleRealisasiRupiahChange(index, 'realisasi', e.target.value)}
+                          placeholder="0"
+                          disabled={isExistingRow}
+                          className={isExistingRow ? "bg-light" : "bg-success bg-opacity-10"}
+                          size="sm"
+                        />
+                      </Col>
+                      <Col md={2}>
+                        <DatePicker
+                          selected={row.tanggalInvoice ? new Date(row.tanggalInvoice) : null}
+                          onChange={(date) => {
+                            const formatted = date ? date.toISOString().split('T')[0] : '';
+                            handleRealisasiChange(index, 'tanggalInvoice', formatted);
+                          }}
+                          dateFormat="dd/MM/yyyy"
+                          locale={id}
+                          placeholderText="dd/mm/yyyy"
+                          className={`form-control form-control-sm ${isExistingRow ? "bg-light" : "bg-success bg-opacity-10"}`}
+                          wrapperClassName="w-100"
+                          disabled={isExistingRow}
+                          showMonthDropdown
+                          showYearDropdown
+                          dropdownMode="select"
+                          yearDropdownItemNumber={10}
+                          scrollableYearDropdown
+                          popperProps={{ strategy: 'fixed' }}
+                        />
+                      </Col>
+                      <Col md={2}>
+                        <Form.Control
+                          type="text"
+                          value={row.nomorInvoice || ''}
+                          onChange={(e) => handleRealisasiChange(index, 'nomorInvoice', e.target.value)}
+                          placeholder="INV-001"
+                          disabled={isExistingRow}
+                          className={isExistingRow ? "bg-light" : "bg-success bg-opacity-10"}
+                          size="sm"
+                        />
+                      </Col>
+                      <Col md={2}>
+                        <Form.Select
+                          value={row.bulanRealisasi || ''}
+                          onChange={(e) => handleRealisasiChange(index, 'bulanRealisasi', e.target.value)}
+                          disabled={isExistingRow}
+                          className={isExistingRow ? "bg-light" : "bg-success bg-opacity-10"}
+                          size="sm"
+                        >
+                          <option value="">Pilih Bulan</option>
+                          {months.map(m => (
+                            <option key={m.value} value={m.value}>{m.label}</option>
+                          ))}
+                        </Form.Select>
+                      </Col>
+                      <Col md={2}>
+                        {row.dokumen ? (
+                          <Badge bg="success" className="w-100">File Terupload</Badge>
+                        ) : (
+                          <Form.Control
+                            type="file"
+                            onChange={(e) => handleRealisasiChange(index, 'dokumen', e.target.files[0])}
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            disabled={isExistingRow}
+                            size="sm"
+                          />
+                        )}
+                      </Col>
+                      <Col md={2} className="text-center">
+                        {index === realisasiRows.length - 1 && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={addRealisasiRow}
+                            className="me-1"
+                          >
+                            <FaPlus />
+                          </Button>
+                        )}
+                        {!isExistingRow && realisasiRows.length > 1 && (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => removeRealisasiRow(index)}
+                          >
+                            <FaTimes />
+                          </Button>
+                        )}
+                      </Col>
+                    </Row>
+                  );
+                })}
                 <hr className="my-4" />
-                 <div className="mb-2">
-                    <h6 className="text-success mb-2">Summary Per Periode (Tahun Berjalan)</h6>
-                    <Row className="mb-3">
-                      <Col md={4}>
-                        <Alert variant="warning" className="mb-0">
-                          <strong>Progress per Periode:</strong> {calculateSummaryPerPeriode().progress}%<br/>
-                          <small className="text-muted">
-                            Detail Realisasi / Komitmen Tahun Ini
-                          </small>
-                        </Alert>
-                      </Col>
-                      <Col md={4}>
-                        <Alert variant="info" className="mb-0">
-                          <strong>Sisa Pembayaran per Periode:</strong> {calculateSummaryPerPeriode().sisa}<br/>
-                          <small className="text-muted">
-                            Komitmen Tahun Ini - Detail Realisasi
-                          </small>
-                        </Alert>
-                      </Col>
-                      <Col md={4}>
-                        <Alert variant="success" className="mb-0">
-                          <strong>Total Realisasi per Periode:</strong> {calculateSummaryPerPeriode().total}<br/>
-                          <small className="text-muted">
-                            SUM dari Detail Realisasi per Periode
-                          </small>
-                        </Alert>
-                      </Col>
-                    </Row>
-                  </div>
-                   <div className="mb-3">
-                    <h6 className="text-success mb-2">
-                      Summary Keseluruhan 
-                      {formData.jenisPaket === 'Multi Year (MY)' ? ' (Total Kontrak MY)' : ' (Total Kontrak)'}
-                    </h6>
-                    <Row>
-                      <Col md={4}>
-                        <Alert variant="warning" className="mb-0" style={{borderLeft: '4px solid #28a745'}}>
-                          <strong>Progress Keseluruhan:</strong> {calculateSummaryKeseluruhan().progress}%<br/>
-                          <small className="text-muted">
-                            Total Realisasi / {formData.jenisPaket === 'Multi Year (MY)' ? 'Nilai Kontrak' : 'Nilai Kontrak/Komitmen'}
-                          </small>
-                        </Alert>
-                      </Col>
-                      <Col md={4}>
-                        <Alert variant="info" className="mb-0" style={{borderLeft: '4px solid #28a745'}}>
-                          <strong>Sisa Pembayaran Keseluruhan:</strong> {calculateSummaryKeseluruhan().sisa}<br/>
-                          <small className="text-muted">
-                            {formData.jenisPaket === 'Multi Year (MY)' ? 'Nilai Kontrak' : 'Nilai Kontrak/Komitmen'} - Total Realisasi
-                          </small>
-                        </Alert>
-                      </Col>
-                      <Col md={4}>
-                        <Alert variant="success" className="mb-0" style={{borderLeft: '4px solid #28a745'}}>
-                          <strong>Total Realisasi Keseluruhan:</strong> {calculateSummaryKeseluruhan().total}<br/>
-                          <small className="text-muted">
-                            {isAddingNewRealisasi 
-                              ? 'Realisasi Lama + Detail Realisasi Baru' 
-                              : 'Total dari Detail Realisasi'
-                            }
-                          </small>
-                        </Alert>
-                      </Col>
-                    </Row>
-                  </div>
+                <div className="mb-2">
+                  <h6 className="text-success mb-2">Summary Per Periode (Tahun Berjalan)</h6>
+                  <Row className="mb-3">
+                    <Col md={4}>
+                      <Alert variant="warning" className="mb-0">
+                        <strong>Progress per Periode:</strong> {calculateSummaryPerPeriode().progress}%<br />
+                        <small className="text-muted">
+                          Detail Realisasi / Komitmen Tahun Ini
+                        </small>
+                      </Alert>
+                    </Col>
+                    <Col md={4}>
+                      <Alert variant="info" className="mb-0">
+                        <strong>Sisa Pembayaran per Periode:</strong> {calculateSummaryPerPeriode().sisa}<br />
+                        <small className="text-muted">
+                          Komitmen Tahun Ini - Detail Realisasi
+                        </small>
+                      </Alert>
+                    </Col>
+                    <Col md={4}>
+                      <Alert variant="success" className="mb-0">
+                        <strong>Total Realisasi per Periode:</strong> {calculateSummaryPerPeriode().total}<br />
+                        <small className="text-muted">
+                          SUM dari Detail Realisasi per Periode
+                        </small>
+                      </Alert>
+                    </Col>
+                  </Row>
+                </div>
+                <div className="mb-3">
+                  <h6 className="text-success mb-2">
+                    Summary Keseluruhan
+                    {formData.jenisPaket === 'Multi Year (MY)' ? ' (Total Kontrak MY)' : ' (Total Kontrak)'}
+                  </h6>
+                  <Row>
+                    <Col md={4}>
+                      <Alert variant="warning" className="mb-0" style={{ borderLeft: '4px solid #28a745' }}>
+                        <strong>Progress Keseluruhan:</strong> {calculateSummaryKeseluruhan().progress}%<br />
+                        <small className="text-muted">
+                          Total Realisasi / {formData.jenisPaket === 'Multi Year (MY)' ? 'Nilai Kontrak' : 'Nilai Kontrak/Komitmen'}
+                        </small>
+                      </Alert>
+                    </Col>
+                    <Col md={4}>
+                      <Alert variant="info" className="mb-0" style={{ borderLeft: '4px solid #28a745' }}>
+                        <strong>Sisa Pembayaran Keseluruhan:</strong> {calculateSummaryKeseluruhan().sisa}<br />
+                        <small className="text-muted">
+                          {formData.jenisPaket === 'Multi Year (MY)' ? 'Nilai Kontrak' : 'Nilai Kontrak/Komitmen'} - Total Realisasi
+                        </small>
+                      </Alert>
+                    </Col>
+                    <Col md={4}>
+                      <Alert variant="success" className="mb-0" style={{ borderLeft: '4px solid #28a745' }}>
+                        <strong>Total Realisasi Keseluruhan:</strong> {calculateSummaryKeseluruhan().total}<br />
+                        <small className="text-muted">
+                          {isAddingNewRealisasi
+                            ? 'Realisasi Lama + Detail Realisasi Baru'
+                            : 'Total dari Detail Realisasi'
+                          }
+                        </small>
+                      </Alert>
+                    </Col>
+                  </Row>
+                </div>
                 <hr />
                 <h6 className="fw-bold mb-3">Nilai Rupiah</h6>
                 <Alert variant="success" className="mb-3">
                   <small>
-                    <strong>Auto-Calculate:</strong> Nilai di bawah akan otomatis terisi berdasarkan <strong>Total Detail Realisasi per Periode</strong> 
+                    <strong>Auto-Calculate:</strong> Nilai di bawah akan otomatis terisi berdasarkan <strong>Total Detail Realisasi per Periode</strong>
                     sesuai checkbox yang dipilih di Tab Komitmen Awal (PDN/TKDN/Import).
                   </small>
                 </Alert>
@@ -3033,10 +3044,10 @@ const calculateSummaryKeseluruhan = () => {
                         Nilai PDN (Rp)
                         {formData.pdnCheckbox && <Badge bg="success" className="ms-2">Auto-filled</Badge>}
                       </Form.Label>
-                      <Form.Control 
-                        type="text" 
-                        name="nilaiPDN" 
-                        value={formData.nilaiPDN} 
+                      <Form.Control
+                        type="text"
+                        name="nilaiPDN"
+                        value={formData.nilaiPDN}
                         onChange={(e) => handleRupiahChange(e, 'nilaiPDN')}
                         placeholder="0"
                         disabled={!formData.pdnCheckbox}
@@ -3063,10 +3074,10 @@ const calculateSummaryKeseluruhan = () => {
                         Nilai TKDN (Rp)
                         {formData.tkdnCheckbox && <Badge bg="success" className="ms-2">Auto-filled</Badge>}
                       </Form.Label>
-                      <Form.Control 
-                        type="text" 
-                        name="nilaiTKDN" 
-                        value={formData.nilaiTKDN} 
+                      <Form.Control
+                        type="text"
+                        name="nilaiTKDN"
+                        value={formData.nilaiTKDN}
                         onChange={(e) => handleRupiahChange(e, 'nilaiTKDN')}
                         placeholder="0"
                         disabled={!formData.tkdnCheckbox}
@@ -3093,10 +3104,10 @@ const calculateSummaryKeseluruhan = () => {
                         Nilai Impor (Rp)
                         {formData.importCheckbox && <Badge bg="success" className="ms-2">Auto-filled</Badge>}
                       </Form.Label>
-                      <Form.Control 
-                        type="text" 
-                        name="nilaiImpor" 
-                        value={formData.nilaiImpor} 
+                      <Form.Control
+                        type="text"
+                        name="nilaiImpor"
+                        value={formData.nilaiImpor}
                         onChange={(e) => handleRupiahChange(e, 'nilaiImpor')}
                         placeholder="0"
                         disabled={!formData.importCheckbox}
@@ -3129,8 +3140,8 @@ const calculateSummaryKeseluruhan = () => {
           </Form>
         </Modal.Body>
       </Modal>
-{/* MODAL DETAIL */}
-     <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="xl" centered>
+      {/* MODAL DETAIL */}
+      <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="xl" centered>
         <Modal.Header closeButton className="bg-primary text-white">
           <Modal.Title>
             Detail Komitmen
@@ -3460,7 +3471,7 @@ const calculateSummaryKeseluruhan = () => {
                             <td>
                               {detail.namaPenyedia || selectedKomitmen.namaPenyedia || '-'}
                               {detail.namaPengadaanRealisasi && (
-                                <><br/><small className="text-muted">{detail.namaPengadaanRealisasi}</small></>
+                                <><br /><small className="text-muted">{detail.namaPengadaanRealisasi}</small></>
                               )}
                             </td>
                             <td>
@@ -3519,9 +3530,9 @@ const calculateSummaryKeseluruhan = () => {
               <p><strong>ID Paket:</strong> {selectedApprovalItem.idPaketMonitoring}</p>
               <p><strong>Nama Paket:</strong> {selectedApprovalItem.namaPaket}</p>
               <p><strong>Komitmen Tahun Berjalan:</strong> {formatCurrency(selectedApprovalItem.nilaiKomitmen)}</p>
-              <p><strong>Komitmen Keseluruhan:</strong> {formatCurrency(selectedApprovalItem.komitmenKeseluruhan)}</p>              
+              <p><strong>Komitmen Keseluruhan:</strong> {formatCurrency(selectedApprovalItem.komitmenKeseluruhan)}</p>
               <hr />
-              
+
               <Form.Group className="mb-3">
                 <Form.Label>
                   {approvalAction === 'approve' ? 'Catatan Approval (Opsional)' : 'Alasan Penolakan *'}
@@ -3531,8 +3542,8 @@ const calculateSummaryKeseluruhan = () => {
                   rows={3}
                   value={approvalNote}
                   onChange={(e) => setApprovalNote(e.target.value)}
-                  placeholder={approvalAction === 'approve' 
-                    ? 'Tambahkan catatan jika diperlukan...' 
+                  placeholder={approvalAction === 'approve'
+                    ? 'Tambahkan catatan jika diperlukan...'
                     : 'Jelaskan alasan penolakan...'}
                   required={approvalAction === 'reject'}
                 />
