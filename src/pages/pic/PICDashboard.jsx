@@ -154,9 +154,9 @@ const PICDashboard = () => {
       komitmenImpor += Number(item.nilaiKeseluruhanImport) || 0;
 
       // Akumulasi global dulu (dipakai jika selectedPeriod === 'all')
-      totalTKDN += Number(item.nilaiKeseluruhanTKDN) || Number(item.nilaiTKDN) || 0;
-      totalPDN += Number(item.nilaiKeseluruhanPDN) || Number(item.nilaiPDN) || 0;
-      totalImpor += Number(item.nilaiKeseluruhanImport) || Number(item.nilaiImpor) || 0;
+      totalTKDN += Number(item.nilaiTKDN) || 0;
+      totalPDN += Number(item.nilaiPDN) || 0;
+      totalImpor += Number(item.nilaiImpor) || 0;
 
       const jenis = item.jenisPengadaan || 'Lainnya';
       if (!dataByJenis[jenis]) dataByJenis[jenis] = { count: 0, total: 0 };
@@ -181,32 +181,27 @@ const PICDashboard = () => {
         const realisasiPeriode = getRealisasiPeriode(item);
         const ratio = realisasiTotal > 0 ? realisasiPeriode / realisasiTotal : 1;
 
-        totalTKDN += (Number(item.nilaiKeseluruhanTKDN) || Number(item.nilaiTKDN) || 0) * ratio;
-        totalPDN += (Number(item.nilaiKeseluruhanPDN) || Number(item.nilaiPDN) || 0) * ratio;
-        totalImpor += (Number(item.nilaiKeseluruhanImport) || Number(item.nilaiImpor) || 0) * ratio;
+        totalTKDN += (Number(item.nilaiTKDN) || 0) * ratio;
+        totalPDN += (Number(item.nilaiPDN) || 0) * ratio;
+        totalImpor += (Number(item.nilaiImpor) || 0) * ratio;
       });
     }
 
     const komitmenP3DN = komitmenTKDN + komitmenPDN;
     const totalP3DN = totalTKDN + totalPDN;
-    const belumRealisasi = Math.max(0, totalKomitmenKeseluruhan - totalRealisasi);
-    const persentaseRealisasi = totalKomitmenKeseluruhan > 0 ? ((totalRealisasi / totalKomitmenKeseluruhan) * 100).toFixed(2) : 0;
-    const persentaseTKDN = totalNilaiKontrak > 0 ? ((totalTKDN / totalNilaiKontrak) * 100).toFixed(2) : 0;
-    const persentasePDN = totalNilaiKontrak > 0 ? ((totalPDN / totalNilaiKontrak) * 100).toFixed(2) : 0;
-    const persentaseImpor = totalNilaiKontrak > 0 ? ((totalImpor / totalNilaiKontrak) * 100).toFixed(2) : 0;
-    const persentaseP3DN = totalNilaiKontrak > 0 ? ((totalP3DN / totalNilaiKontrak) * 100).toFixed(2) : 0;
-    const persentaseKomitmenTKDN  = totalKomitmenKeseluruhan > 0 ? Math.min(((komitmenTKDN  / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
-    const persentaseKomitmenPDN   = totalKomitmenKeseluruhan > 0 ? Math.min(((komitmenPDN   / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
-    const persentaseKomitmenP3DN  = totalKomitmenKeseluruhan > 0 ? Math.min(((komitmenP3DN  / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
-    const persentaseKomitmenImpor = totalKomitmenKeseluruhan > 0 ? Math.min(((komitmenImpor / totalKomitmenKeseluruhan) * 100), 100).toFixed(2) : 0;
-
+    const basisPersentase = totalNilaiKontrak > 0 ? totalNilaiKontrak : totalKomitmenKeseluruhan;
+    const belumRealisasi = Math.max(0, totalNilaiKontrak - totalRealisasi);
+    const persentaseRealisasi = basisPersentase > 0 ? ((totalRealisasi / basisPersentase) * 100).toFixed(2) : 0;
+    const persentaseTKDN = basisPersentase > 0 ? ((totalTKDN / basisPersentase) * 100).toFixed(2) : 0;
+    const persentasePDN = basisPersentase > 0 ? ((totalPDN / basisPersentase) * 100).toFixed(2) : 0;
+    const persentaseImpor = basisPersentase > 0 ? ((totalImpor / basisPersentase) * 100).toFixed(2) : 0;
+    const persentaseP3DN = basisPersentase > 0 ? ((totalP3DN / basisPersentase) * 100).toFixed(2) : 0;
     return {
       komitmen: totalKomitmen, komitmenKeseluruhan: totalKomitmenKeseluruhan,
       realisasi: totalRealisasi, nilaiKontrak: totalNilaiKontrak,
       belumRealisasi, tkdn: totalTKDN, pdn: totalPDN, impor: totalImpor, p3dn: totalP3DN,
       komitmenTKDN, komitmenPDN, komitmenP3DN, komitmenImpor,
       persentaseRealisasi, persentaseTKDN, persentasePDN, persentaseImpor, persentaseP3DN,
-      persentaseKomitmenTKDN, persentaseKomitmenPDN, persentaseKomitmenP3DN, persentaseKomitmenImpor,
       totalData: list.length, dataByJenis, dataByMetode
     };
   }, [rawData, selectedPeriod, selectedMonth, selectedYear, qMonths, filterJenisPaket]);
@@ -330,10 +325,10 @@ const PICDashboard = () => {
 
             {/* Stats Row 2 — 4 card: TKDN / PDN / P3DN / Import dari Komitmen Awal */}
             <Row className="g-3 mb-4">
-              <Col xs={12} sm={6} lg={3}><StatCard title="TKDN (Komitmen Awal)" value={fmt(dashboardData.komitmenTKDN)} icon={tkdnIcon} color="info" percentage={`${dashboardData.persentaseKomitmenTKDN}%`} /></Col>
-              <Col xs={12} sm={6} lg={3}><StatCard title="PDN (Komitmen Awal)" value={fmt(dashboardData.komitmenPDN)} icon={pdnIcon} color="primary" percentage={`${dashboardData.persentaseKomitmenPDN}%`} /></Col>
-              <Col xs={12} sm={6} lg={3}><StatCard title="P3DN (Komitmen Awal)" value={fmt(dashboardData.komitmenP3DN)} icon={p3dnIcon} color="success" percentage={`${dashboardData.persentaseKomitmenP3DN}%`} /></Col>
-              <Col xs={12} sm={6} lg={3}><StatCard title="Import (Komitmen Awal)" value={fmt(dashboardData.komitmenImpor)} icon={importIcon} color="danger" percentage={`${dashboardData.persentaseKomitmenImpor}%`} /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="TKDN (Komitmen Awal)" value={fmt(dashboardData.komitmenTKDN)} icon={tkdnIcon} color="info" /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="PDN (Komitmen Awal)" value={fmt(dashboardData.komitmenPDN)} icon={pdnIcon} color="primary" /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="P3DN (Komitmen Awal)" value={fmt(dashboardData.komitmenP3DN)} icon={p3dnIcon} color="success" /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="Import (Komitmen Awal)" value={fmt(dashboardData.komitmenImpor)} icon={importIcon} color="danger" /></Col>
             </Row>
 
             {/* Stats Row 3 — 3 card */}
