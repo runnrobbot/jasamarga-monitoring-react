@@ -318,32 +318,32 @@ const PICDashboard = () => {
 
             {/* Stats Row 1 — 3 card */}
             <Row className="g-3 mb-4">
-              <Col xs={12} sm={6} lg={4}><StatCard title="Total Paket" value={dashboardData.totalData} icon={totalPaketIcon} color="secondary" subtitle={`Data untuk ${user.namaAP}`} /></Col>
-              <Col xs={12} sm={6} lg={4}><StatCard title="Komitmen Keseluruhan" value={fmt(dashboardData.komitmenKeseluruhan)} icon={komitmenKeseluruhanIcon} color="info" /></Col>
-              <Col xs={12} sm={6} lg={4}><StatCard title="Komitmen Tahun Ini" value={fmt(dashboardData.komitmen)} icon={komitmenPerTahunIcon} color="primary" /></Col>
+              <Col xs={12} sm={6} lg={4}><StatCard title="Total Paket" value={dashboardData.totalData} icon={totalPaketIcon} color="jm-blue" subtitle={`Data untuk ${user.namaAP}`} /></Col>
+              <Col xs={12} sm={6} lg={4}><StatCard title="Komitmen Keseluruhan" value={fmt(dashboardData.komitmenKeseluruhan)} icon={komitmenKeseluruhanIcon} color="jm-blue" /></Col>
+              <Col xs={12} sm={6} lg={4}><StatCard title="Komitmen Tahun Ini" value={fmt(dashboardData.komitmen)} icon={komitmenPerTahunIcon} color="jm-blue" /></Col>
             </Row>
 
             {/* Stats Row 2 — 4 card: TKDN / PDN / P3DN / Import dari Komitmen Awal */}
             <Row className="g-3 mb-4">
-              <Col xs={12} sm={6} lg={3}><StatCard title="TKDN (Komitmen Awal)" value={fmt(dashboardData.komitmenTKDN)} icon={tkdnIcon} color="info" /></Col>
-              <Col xs={12} sm={6} lg={3}><StatCard title="PDN (Komitmen Awal)" value={fmt(dashboardData.komitmenPDN)} icon={pdnIcon} color="primary" /></Col>
-              <Col xs={12} sm={6} lg={3}><StatCard title="P3DN (Komitmen Awal)" value={fmt(dashboardData.komitmenP3DN)} icon={p3dnIcon} color="success" /></Col>
-              <Col xs={12} sm={6} lg={3}><StatCard title="Import (Komitmen Awal)" value={fmt(dashboardData.komitmenImpor)} icon={importIcon} color="danger" /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="TKDN (Komitmen Awal)" value={fmt(dashboardData.komitmenTKDN)} icon={tkdnIcon} color="jm-blue" /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="PDN (Komitmen Awal)" value={fmt(dashboardData.komitmenPDN)} icon={pdnIcon} color="jm-blue" /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="P3DN (Komitmen Awal)" value={fmt(dashboardData.komitmenP3DN)} icon={p3dnIcon} color="jm-blue" /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="Import (Komitmen Awal)" value={fmt(dashboardData.komitmenImpor)} icon={importIcon} color="jm-blue" /></Col>
             </Row>
 
             {/* Stats Row 3 — 3 card */}
             <Row className="g-3 mb-4">
-              <Col xs={12} sm={6} lg={4}><StatCard title="Nilai Kontrak" value={fmt(dashboardData.nilaiKontrak)} icon={nilaiKontrakIcon} color="success" /></Col>
-              <Col xs={12} sm={6} lg={4}><StatCard title="Realisasi" value={fmt(dashboardData.realisasi)} icon={realisasiIcon} color="success" percentage={`${dashboardData.persentaseRealisasi}%`} /></Col>
-              <Col xs={12} sm={6} lg={4}><StatCard title="Belum Realisasi" value={fmt(dashboardData.belumRealisasi)} icon={belumRealisasiIcon} color="warning" /></Col>
+              <Col xs={12} sm={6} lg={4}><StatCard title="Nilai Kontrak" value={fmt(dashboardData.nilaiKontrak)} icon={nilaiKontrakIcon} color="jm-yellow" /></Col>
+              <Col xs={12} sm={6} lg={4}><StatCard title="Realisasi" value={fmt(dashboardData.realisasi)} icon={realisasiIcon} color="jm-yellow" percentage={`${dashboardData.persentaseRealisasi}%`} /></Col>
+              <Col xs={12} sm={6} lg={4}><StatCard title="Belum Realisasi" value={fmt(dashboardData.belumRealisasi)} icon={belumRealisasiIcon} color="jm-yellow" /></Col>
             </Row>
 
             {/* Stats Row 4 — 4 card: TKDN / PDN / P3DN / Import Realisasi Aktual */}
             <Row className="g-3 mb-4">
-              <Col xs={12} sm={6} lg={3}><StatCard title="TKDN" value={fmt(dashboardData.tkdn)} icon={tkdnIcon} color="info" percentage={`${dashboardData.persentaseTKDN}%`} /></Col>
-              <Col xs={12} sm={6} lg={3}><StatCard title="PDN" value={fmt(dashboardData.pdn)} icon={pdnIcon} color="primary" percentage={`${dashboardData.persentasePDN}%`} /></Col>
-              <Col xs={12} sm={6} lg={3}><StatCard title="P3DN (TKDN + PDN)" value={fmt(dashboardData.p3dn)} icon={p3dnIcon} color="success" percentage={`${dashboardData.persentaseP3DN}%`} /></Col>
-              <Col xs={12} sm={6} lg={3}><StatCard title="Import" value={fmt(dashboardData.impor)} icon={importIcon} color="danger" percentage={`${dashboardData.persentaseImpor}%`} /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="TKDN" value={fmt(dashboardData.tkdn)} icon={tkdnIcon} color="jm-yellow" percentage={`${dashboardData.persentaseTKDN}%`} /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="PDN" value={fmt(dashboardData.pdn)} icon={pdnIcon} color="jm-yellow" percentage={`${dashboardData.persentasePDN}%`} /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="P3DN (TKDN + PDN)" value={fmt(dashboardData.p3dn)} icon={p3dnIcon} color="jm-yellow" percentage={`${dashboardData.persentaseP3DN}%`} /></Col>
+              <Col xs={12} sm={6} lg={3}><StatCard title="Import" value={fmt(dashboardData.impor)} icon={importIcon} color="jm-yellow" percentage={`${dashboardData.persentaseImpor}%`} /></Col>
             </Row>
 
             {/* Charts Row 1 */}

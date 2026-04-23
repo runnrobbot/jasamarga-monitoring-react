@@ -40,17 +40,17 @@
   .stat-card .card-body {
     padding: 1rem;
   }
-  
+
   .stat-card h4 {
     font-size: 1.25rem !important;
   }
-  
+
   .stat-card .icon-wrapper {
     width: 40px !important;
     height: 40px !important;
     min-width: 40px !important;
   }
-  
+
   .stat-card .icon-wrapper svg {
     width: 20px;
     height: 20px;
@@ -71,4 +71,16 @@
 
 .stat-card h4 {
   animation: countUp 0.5s ease-out;
+}
+
+/* ── Jasa Marga Brand Colors ─────────────────────────────────── */
+
+/* Blue (Komitmen group) */
+.stat-card[style*="003087"] {
+  /* top border already applied via inline style */
+}
+
+/* Yellow (Realisasi group) */
+.stat-card[style*="FDB913"] {
+  /* top border already applied via inline style */
 }
