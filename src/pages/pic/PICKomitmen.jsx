@@ -5,7 +5,7 @@ import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import NavigationBar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
-import { FaEye, FaFileExport, FaSearch, FaPlus, FaEdit, FaTimes, FaDownload, FaFileImport, FaCheckCircle, FaTimesCircle, FaClock, FaExclamationTriangle } from 'react-icons/fa';
+import { FaEye, FaFileExport, FaSearch, FaPlus, FaEdit, FaTimes, FaDownload, FaFileImport, FaCheckCircle, FaTimesCircle, FaClock, FaExclamationTriangle, FaUndo } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import 'react-toastify/dist/ReactToastify.css';
@@ -59,6 +59,12 @@ const PICKomitmen = () => {
   const [userAP, setUserAP] = useState('');
 
   const [filterApprovalStatus, setFilterApprovalStatus] = useState('all');
+
+  // State untuk fitur Request Revisi
+  const [showRevisiModal, setShowRevisiModal] = useState(false);
+  const [selectedRevisiItem, setSelectedRevisiItem] = useState(null);
+  const [revisiNote, setRevisiNote] = useState('');
+  const [submittingRevisi, setSubmittingRevisi] = useState(false);
 
   const [realisasiRows, setRealisasiRows] = useState([{
     id: Date.now(),
@@ -590,6 +596,25 @@ const PICKomitmen = () => {
         return;
       }
 
+      // Validasi: Total Rencana tidak boleh melebihi Komitmen Keseluruhan
+      const totalRencana = rencanaRows.reduce((sum, row) => sum + parseRupiahInput(row.nilaiRencana), 0);
+      const nilaiKomitmenKeseluruhan = parseRupiahInput(formData.komitmenKeseluruhan);
+      const nilaiKomitmenTahunIni = parseRupiahInput(formData.nilaiKomitmen);
+      const referensiKomitmen = nilaiKomitmenKeseluruhan > 0 ? nilaiKomitmenKeseluruhan : nilaiKomitmenTahunIni;
+
+      if (totalRencana > referensiKomitmen && referensiKomitmen > 0) {
+        const selisih = totalRencana - referensiKomitmen;
+        toast.error(
+          `Total Rencana Realisasi (${formatCurrency(totalRencana)}) melebihi ` +
+          `${nilaiKomitmenKeseluruhan > 0 ? 'Komitmen Keseluruhan' : 'Komitmen Tahun Berjalan'} ` +
+          `(${formatCurrency(referensiKomitmen)}) sebesar ${formatCurrency(selisih)}. ` +
+          `Kurangi nilai rencana sebelum menyimpan.`,
+          { autoClose: 8000 }
+        );
+        setLoading(false);
+        return;
+      }
+
       if (formData.pdnCheckbox) {
         if (!formData.nilaiTahunBerjalanPDN || !formData.nilaiKeseluruhanPDN) {
           toast.error('Nilai Tahun Berjalan PDN dan Nilai Keseluruhan PDN wajib diisi');
@@ -1102,6 +1127,87 @@ const PICKomitmen = () => {
     setSelectedKomitmen(komitmen);
     setEditMode(true);
     setShowFormModal(true);
+  };
+
+  const handleOpenRevisi = (item) => {
+    setSelectedRevisiItem(item);
+    setRevisiNote('');
+    setShowRevisiModal(true);
+  };
+
+  const handleSubmitRevisi = async () => {
+    if (!revisiNote || revisiNote.trim() === '') {
+      toast.error('Catatan/alasan revisi wajib diisi');
+      return;
+    }
+    if (!selectedRevisiItem) return;
+
+    setSubmittingRevisi(true);
+    try {
+      const isDraft = selectedRevisiItem.approvalStatus === 'draft';
+
+      // Kalau draft: langsung tarik ke rejected agar bisa edit, tanpa perlu tunggu admin
+      // Kalau approved: minta review admin dulu (revision_requested)
+      const revisiData = isDraft
+        ? {
+          approvalStatus: 'rejected',
+          approvalNote: `[Ditarik PIC] ${revisiNote.trim()}`,
+          rejectedBy: user?.email || user?.displayName || '',
+          rejectedAt: new Date(),
+          revisiNote: revisiNote.trim(),
+          revisiRequestedBy: user?.email || user?.displayName || '',
+          revisiRequestedAt: new Date(),
+          updatedAt: new Date(),
+          updatedBy: user?.email || user?.displayName || ''
+        }
+        : {
+          approvalStatus: 'revision_requested',
+          revisiNote: revisiNote.trim(),
+          revisiRequestedBy: user?.email || user?.displayName || '',
+          revisiRequestedAt: new Date(),
+          updatedAt: new Date(),
+          updatedBy: user?.email || user?.displayName || ''
+        };
+
+      await updateDoc(doc(db, 'komitmen', selectedRevisiItem.id), revisiData);
+
+      if (isDraft) {
+        toast.success('Submission berhasil ditarik. Silakan perbaiki dan submit ulang!');
+      } else {
+        toast.success('Request revisi berhasil dikirim ke admin!');
+      }
+
+      setKomitmenList(prev => prev.map(k =>
+        k.id === selectedRevisiItem.id ? { ...k, ...revisiData } : k
+      ));
+
+      try {
+        await addNotification(
+          user?.uid || '',
+          'info',
+          isDraft ? 'Submission Ditarik' : 'Request Revisi Dikirim',
+          isDraft
+            ? `Komitmen "${selectedRevisiItem.namaPaket}" berhasil ditarik. Silakan edit dan submit ulang.`
+            : `Request revisi untuk komitmen "${selectedRevisiItem.namaPaket}" berhasil dikirim ke admin`,
+          {
+            komitmenId: selectedRevisiItem.id,
+            action: isDraft ? 'draft_recalled' : 'revision_requested',
+            reason: revisiNote.trim()
+          }
+        );
+      } catch (notifError) {
+        console.error('Error sending notification:', notifError);
+      }
+
+      setShowRevisiModal(false);
+      setSelectedRevisiItem(null);
+      setRevisiNote('');
+    } catch (error) {
+      console.error('Error requesting revision:', error);
+      toast.error('Gagal mengirim request revisi: ' + error.message);
+    } finally {
+      setSubmittingRevisi(false);
+    }
   };
 
   const handleExport = () => {
@@ -1857,6 +1963,7 @@ const PICKomitmen = () => {
                     <option value="all">Semua Status</option>
                     <option value="draft">Pending Approval</option>
                     <option value="approved">Approved</option>
+                    <option value="revision_requested">Request Revisi</option>
                     <option value="rejected">Rejected - Perlu Revisi</option>
                     <option value="selesai">Selesai</option>
                   </Form.Select>
@@ -1879,6 +1986,7 @@ const PICKomitmen = () => {
                         <th>Jenis</th>
                         <th>Komitmen/Kontrak Keseluruhan</th>
                         <th>Komitmen Tahun Berjalan</th>
+                        <th>Total Rencana Realisasi</th>
                         <th>Nilai Kontrak</th>
                         <th>Realisasi</th>
                         <th>Status</th>
@@ -1888,8 +1996,7 @@ const PICKomitmen = () => {
                     <tbody>
                       {filteredList.length === 0 ? (
                         <tr>
-                          <td colSpan="10" className="text-center">Tidak ada data</td>
-                        </tr>
+                          <td colSpan="11" className="text-center">Tidak ada data</td>                        </tr>
                       ) : (
                         filteredList.map((item, index) => (
                           <tr key={item.id}>
@@ -1911,6 +2018,11 @@ const PICKomitmen = () => {
                               )}
                             </td>
                             <td>{formatCurrency(item.nilaiKomitmen)}</td>
+                            <td>
+                              {formatCurrency(
+                                (item.rencanaDetail || []).reduce((sum, d) => sum + (d.nilaiRencana || 0), 0)
+                              )}
+                            </td>
                             <td>
                               {formatCurrency(item.nilaiKontrakKeseluruhan)}
                             </td>
@@ -1942,6 +2054,19 @@ const PICKomitmen = () => {
                                     )}
                                   </>
                                 )}
+                                {item.approvalStatus === 'revision_requested' && (
+                                  <>
+                                    <Badge bg="warning" text="dark">
+                                      <FaUndo className="me-1" />
+                                      Request Revisi
+                                    </Badge>
+                                    {item.revisiNote && (
+                                      <small className="text-warning mt-1" style={{ fontSize: '0.75rem' }}>
+                                        <strong>Catatan:</strong> {item.revisiNote}
+                                      </small>
+                                    )}
+                                  </>
+                                )}
                                 {item.approvalStatus === 'approved' && item.status === 'selesai' && (
                                   <Badge bg="primary">
                                     <FaCheckCircle className="me-1" />
@@ -1959,7 +2084,7 @@ const PICKomitmen = () => {
                               </div>
                             </td>
                             <td>
-                              <div className="d-flex gap-1">
+                              <div className="d-flex gap-1 flex-wrap">
                                 <Button
                                   variant="info"
                                   size="sm"
@@ -1977,22 +2102,39 @@ const PICKomitmen = () => {
                                   onClick={() => handleEdit(item)}
                                   disabled={
                                     item.status === 'selesai' ||
-                                    item.approvalStatus === 'draft'
+                                    item.approvalStatus === 'draft' ||
+                                    item.approvalStatus === 'revision_requested'
                                   }
                                   title={
                                     item.status === 'selesai'
                                       ? "Komitmen sudah ditandai selesai oleh admin"
                                       : item.approvalStatus === 'draft'
                                         ? "Menunggu approval admin. Tombol edit akan aktif setelah approved/rejected"
-                                        : item.approvalStatus === 'rejected'
-                                          ? "Edit untuk perbaiki data yang ditolak, lalu submit ulang"
-                                          : item.approvalStatus === 'approved'
-                                            ? "Edit untuk update realisasi"
-                                            : "Edit komitmen"
+                                        : item.approvalStatus === 'revision_requested'
+                                          ? "Menunggu admin memproses request revisi"
+                                          : item.approvalStatus === 'rejected'
+                                            ? "Edit untuk perbaiki data yang ditolak, lalu submit ulang"
+                                            : item.approvalStatus === 'approved'
+                                              ? "Edit untuk update realisasi"
+                                              : "Edit komitmen"
                                   }
                                 >
                                   <FaEdit />
                                 </Button>
+                                {(item.approvalStatus === 'approved' || item.approvalStatus === 'draft') && item.status !== 'selesai' && (
+                                  <Button
+                                    variant="outline-warning"
+                                    size="sm"
+                                    onClick={() => handleOpenRevisi(item)}
+                                    title={
+                                      item.approvalStatus === 'draft'
+                                        ? "Tarik kembali submission untuk diperbaiki"
+                                        : "Request Revisi Data Komitmen Awal ke Admin"
+                                    }
+                                  >
+                                    <FaUndo className="me-1" /> Req. Revisi
+                                  </Button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -2436,10 +2578,34 @@ const PICKomitmen = () => {
 
                 <Row className="mt-3">
                   <Col md={12}>
-                    <Alert variant="success" className="mb-0">
+                    <Alert variant={
+                      (() => {
+                        const totalRencana = rencanaRows.reduce((sum, row) => sum + parseRupiahInput(row.nilaiRencana), 0);
+                        const refKomitmen = parseRupiahInput(formData.komitmenKeseluruhan) > 0
+                          ? parseRupiahInput(formData.komitmenKeseluruhan)
+                          : parseRupiahInput(formData.nilaiKomitmen);
+                        if (refKomitmen > 0 && totalRencana > refKomitmen) return 'danger';
+                        if (refKomitmen > 0 && totalRencana === refKomitmen) return 'success';
+                        return 'success';
+                      })()
+                    } className="mb-0">
                       <strong>Total Rencana Realisasi:</strong> {formatRupiahInput(
                         rencanaRows.reduce((sum, row) => sum + parseRupiahInput(row.nilaiRencana), 0).toString()
                       )}
+                      {(() => {
+                        const totalRencana = rencanaRows.reduce((sum, row) => sum + parseRupiahInput(row.nilaiRencana), 0);
+                        const refKomitmen = parseRupiahInput(formData.komitmenKeseluruhan) > 0
+                          ? parseRupiahInput(formData.komitmenKeseluruhan)
+                          : parseRupiahInput(formData.nilaiKomitmen);
+                        if (refKomitmen > 0 && totalRencana > refKomitmen) {
+                          return (
+                            <span className="ms-2 text-danger fw-bold">
+                              ⚠️ Melebihi {parseRupiahInput(formData.komitmenKeseluruhan) > 0 ? 'Komitmen Keseluruhan' : 'Komitmen Tahun Berjalan'} sebesar {formatRupiahInput((totalRencana - refKomitmen).toString())}! Data tidak dapat disimpan.
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
                     </Alert>
                   </Col>
                 </Row>
@@ -3137,7 +3303,13 @@ const PICKomitmen = () => {
 
             <div className="d-flex justify-content-end gap-2 mt-3">
               <Button variant="secondary" onClick={handleCloseFormModal}>Batal</Button>
-              <Button variant="primary" type="submit" disabled={loading}>
+              <Button variant="primary" type="submit" disabled={loading || (() => {
+                const totalRencana = rencanaRows.reduce((sum, row) => sum + parseRupiahInput(row.nilaiRencana), 0);
+                const refKomitmen = parseRupiahInput(formData.komitmenKeseluruhan) > 0
+                  ? parseRupiahInput(formData.komitmenKeseluruhan)
+                  : parseRupiahInput(formData.nilaiKomitmen);
+                return refKomitmen > 0 && totalRencana > refKomitmen;
+              })()}>
                 {loading ? <Spinner animation="border" size="sm" /> : (editMode ? 'Update' : 'Simpan')}
               </Button>
             </div>
@@ -3800,6 +3972,81 @@ const PICKomitmen = () => {
               {loading ? <Spinner animation="border" size="sm" /> : 'Simpan & Lanjut'}
             </Button>
           </div>
+        </Modal.Footer>
+      </Modal>
+      {/* MODAL REQUEST REVISI */}
+      <Modal show={showRevisiModal} onHide={() => setShowRevisiModal(false)} centered>
+        <Modal.Header closeButton className="bg-warning">
+          <Modal.Title>
+            <FaUndo className="me-2" />
+            {selectedRevisiItem?.approvalStatus === 'draft' ? 'Tarik Submission' : 'Request Revisi Data Komitmen'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedRevisiItem && (
+            <>
+              <Alert variant="info" className="mb-3">
+                <strong>Paket:</strong> {selectedRevisiItem.namaPaket}<br />
+                <strong>ID:</strong> <span className="font-monospace">{selectedRevisiItem.idPaketMonitoring}</span>
+              </Alert>
+              {selectedRevisiItem.approvalStatus === 'draft' ? (
+                <Alert variant="warning" className="mb-3">
+                  <small>
+                    <FaExclamationTriangle className="me-1" />
+                    Komitmen ini sedang <strong>menunggu approval admin</strong>. Dengan menarik submission,
+                    status akan langsung berubah ke <strong>"Rejected"</strong> sehingga Anda dapat mengedit
+                    dan submit ulang tanpa perlu menunggu admin.
+                  </small>
+                </Alert>
+              ) : (
+                <Alert variant="warning" className="mb-3">
+                  <small>
+                    <FaExclamationTriangle className="me-1" />
+                    Dengan mengajukan request revisi, status komitmen akan berubah menjadi <strong>"Request Revisi"</strong>.
+                    Admin akan mereview permintaan Anda dan membuka akses edit data komitmen awal jika disetujui.
+                  </small>
+                </Alert>
+              )}
+              <Form.Group>
+                <Form.Label>
+                  {selectedRevisiItem.approvalStatus === 'draft' ? 'Alasan Penarikan' : 'Catatan / Alasan Revisi'}{' '}
+                  <span className="text-danger">*</span>
+                </Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={4}
+                  value={revisiNote}
+                  onChange={(e) => setRevisiNote(e.target.value)}
+                  placeholder={
+                    selectedRevisiItem.approvalStatus === 'draft'
+                      ? "Jelaskan alasan penarikan submission..."
+                      : "Jelaskan apa yang perlu direvisi dan alasannya..."
+                  }
+                  maxLength={500}
+                />
+                <Form.Text className="text-muted">
+                  {revisiNote.length}/500 karakter
+                </Form.Text>
+              </Form.Group>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowRevisiModal(false)}>
+            Batal
+          </Button>
+          <Button
+            variant="warning"
+            onClick={handleSubmitRevisi}
+            disabled={submittingRevisi || !revisiNote.trim()}
+          >
+            {submittingRevisi
+              ? <><Spinner animation="border" size="sm" className="me-1" /> Memproses...</>
+              : selectedRevisiItem?.approvalStatus === 'draft'
+                ? <><FaUndo className="me-1" /> Tarik Submission</>
+                : <><FaUndo className="me-1" /> Kirim Request Revisi</>
+            }
+          </Button>
         </Modal.Footer>
       </Modal>
     </>

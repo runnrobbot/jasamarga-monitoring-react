@@ -5,7 +5,7 @@ import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import NavigationBar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
-import { FaEye, FaTrash, FaFileExport, FaFileImport, FaSearch, FaFilter, FaDownload, FaPlus, FaEdit, FaCalculator, FaTimes, FaCheckCircle, FaTimesCircle, FaClock, FaExclamationTriangle } from 'react-icons/fa';
+import { FaEye, FaTrash, FaFileExport, FaFileImport, FaSearch, FaFilter, FaDownload, FaPlus, FaEdit, FaCalculator, FaTimes, FaCheckCircle, FaTimesCircle, FaClock, FaExclamationTriangle, FaUndo } from 'react-icons/fa';
 import { toast, ToastContainer, Slide } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import 'react-toastify/dist/ReactToastify.css';
@@ -41,6 +41,12 @@ const AdminKomitmen = () => {
   const [approvalAction, setApprovalAction] = useState('approve');
   const [approvalNote, setApprovalNote] = useState('');
   const [filterApprovalStatus, setFilterApprovalStatus] = useState('all');
+
+  // State untuk memproses Request Revisi dari PIC
+  const [showApproveRevisiModal, setShowApproveRevisiModal] = useState(false);
+  const [selectedRevisiItem, setSelectedRevisiItem] = useState(null);
+  const [approveRevisiNote, setApproveRevisiNote] = useState('');
+  const [submittingRevisi, setSubmittingRevisi] = useState(false);
 
   const [users, setUsers] = useState({});
   const [showImportRealisasiModal, setShowImportRealisasiModal] = useState(false);
@@ -471,7 +477,26 @@ const AdminKomitmen = () => {
         return;
       }
 
-      // ✅ VALIDASI BARU - Field wajib untuk PDN/TKDN/Import
+      // Validasi: Total Rencana tidak boleh melebihi Komitmen Keseluruhan
+      const totalRencanaAdmin = rencanaRows.reduce((sum, row) => sum + parseRupiahInput(row.nilaiRencana), 0);
+      const nilaiKomitmenKeseluruhanAdmin = parseRupiahInput(formData.komitmenKeseluruhan);
+      const nilaiKomitmenTahunIniAdmin = parseRupiahInput(formData.nilaiKomitmen);
+      const referensiKomitmenAdmin = nilaiKomitmenKeseluruhanAdmin > 0 ? nilaiKomitmenKeseluruhanAdmin : nilaiKomitmenTahunIniAdmin;
+
+      if (totalRencanaAdmin > referensiKomitmenAdmin && referensiKomitmenAdmin > 0) {
+        const selisihAdmin = totalRencanaAdmin - referensiKomitmenAdmin;
+        toast.error(
+          `Total Rencana Realisasi (${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalRencanaAdmin)}) melebihi ` +
+          `${nilaiKomitmenKeseluruhanAdmin > 0 ? 'Komitmen Keseluruhan' : 'Komitmen Tahun Berjalan'} ` +
+          `(${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(referensiKomitmenAdmin)}) sebesar ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(selisihAdmin)}. ` +
+          `Kurangi nilai rencana sebelum menyimpan.`,
+          { autoClose: 8000 }
+        );
+        setLoading(false);
+        return;
+      }
+
+
       if (formData.pdnCheckbox) {
         if (!formData.nilaiTahunBerjalanPDN || !formData.nilaiKeseluruhanPDN) {
           toast.error('Nilai Tahun Berjalan PDN dan Nilai Keseluruhan PDN wajib diisi');
@@ -1624,6 +1649,108 @@ const AdminKomitmen = () => {
     }
   };
 
+  const handleOpenApproveRevisi = (item) => {
+    setSelectedRevisiItem(item);
+    setApproveRevisiNote('');
+    setShowApproveRevisiModal(true);
+  };
+
+  const handleApproveRevisi = async () => {
+    if (!selectedRevisiItem) return;
+    setSubmittingRevisi(true);
+    try {
+      const updateData = {
+        approvalStatus: 'rejected',
+        approvalNote: approveRevisiNote.trim() || `Revisi disetujui. Silakan perbaiki: ${selectedRevisiItem.revisiNote}`,
+        rejectedBy: user?.email || user?.displayName || 'Admin',
+        rejectedAt: new Date(),
+        revisiApprovedBy: user?.email || user?.displayName || 'Admin',
+        revisiApprovedAt: new Date(),
+        updatedAt: new Date(),
+        updatedBy: user?.email || user?.displayName || ''
+      };
+
+      await updateDoc(doc(db, 'komitmen', selectedRevisiItem.id), updateData);
+      toast.success(`Request revisi disetujui. PIC dapat mengedit komitmen "${selectedRevisiItem.namaPaket}".`);
+
+      try {
+        await addNotification(
+          selectedRevisiItem.idUser,
+          'warning',
+          'Request Revisi Disetujui',
+          `Request revisi untuk komitmen "${selectedRevisiItem.namaPaket}" disetujui. Silakan edit dan submit ulang.`,
+          {
+            komitmenId: selectedRevisiItem.id,
+            action: 'revision_approved',
+            approvedBy: user?.email || user?.displayName
+          }
+        );
+      } catch (notifError) {
+        console.error('Error sending notification:', notifError);
+      }
+
+      setKomitmenList(prev => prev.map(k =>
+        k.id === selectedRevisiItem.id ? { ...k, ...updateData } : k
+      ));
+      setShowApproveRevisiModal(false);
+      setSelectedRevisiItem(null);
+    } catch (error) {
+      toast.error('Gagal memproses request revisi: ' + error.message);
+    } finally {
+      setSubmittingRevisi(false);
+    }
+  };
+
+  const handleRejectRevisi = async () => {
+    if (!selectedRevisiItem) return;
+    if (!approveRevisiNote.trim()) {
+      toast.error('Alasan penolakan revisi wajib diisi');
+      return;
+    }
+    setSubmittingRevisi(true);
+    try {
+      const updateData = {
+        approvalStatus: 'approved',
+        revisiRejectedNote: approveRevisiNote.trim(),
+        revisiRejectedBy: user?.email || user?.displayName || 'Admin',
+        revisiRejectedAt: new Date(),
+        revisiNote: '',
+        updatedAt: new Date(),
+        updatedBy: user?.email || user?.displayName || ''
+      };
+
+      await updateDoc(doc(db, 'komitmen', selectedRevisiItem.id), updateData);
+      toast.success('Request revisi ditolak. Status komitmen kembali ke Approved.');
+
+      try {
+        await addNotification(
+          selectedRevisiItem.idUser,
+          'info',
+          'Request Revisi Ditolak',
+          `Request revisi untuk komitmen "${selectedRevisiItem.namaPaket}" ditolak oleh admin.`,
+          {
+            komitmenId: selectedRevisiItem.id,
+            action: 'revision_rejected',
+            rejectedBy: user?.email || user?.displayName,
+            reason: approveRevisiNote.trim()
+          }
+        );
+      } catch (notifError) {
+        console.error('Error sending notification:', notifError);
+      }
+
+      setKomitmenList(prev => prev.map(k =>
+        k.id === selectedRevisiItem.id ? { ...k, ...updateData } : k
+      ));
+      setShowApproveRevisiModal(false);
+      setSelectedRevisiItem(null);
+    } catch (error) {
+      toast.error('Gagal menolak request revisi: ' + error.message);
+    } finally {
+      setSubmittingRevisi(false);
+    }
+  };
+
   const calculateSummaryPerPeriode = () => {
     const currentYear = new Date().getFullYear().toString();
     const isMY = formData.jenisPaket === 'Multi Year (MY)';
@@ -1789,6 +1916,7 @@ const AdminKomitmen = () => {
                     <option value="all">Semua Status</option>
                     <option value="draft">Pending Approval</option>
                     <option value="approved">Approved</option>
+                    <option value="revision_requested">⚠️ Request Revisi</option>
                     <option value="rejected">Rejected</option>
                     <option value="selesai">Selesai</option>
                   </Form.Select>
@@ -1811,6 +1939,7 @@ const AdminKomitmen = () => {
                         <th>Jenis</th>
                         <th>Komitmen Keseluruhan</th>
                         <th>Komitmen Tahun Berjalan</th>
+                        <th>Total Rencana Realisasi</th>
                         <th>Nilai Kontrak</th>
                         <th>Realisasi</th>
                         <th>Status</th>
@@ -1820,8 +1949,7 @@ const AdminKomitmen = () => {
                     <tbody>
                       {filteredList.length === 0 ? (
                         <tr>
-                          <td colSpan="11" className="text-center">Tidak ada data</td>
-                        </tr>
+                          <td colSpan="12" className="text-center">Tidak ada data</td>                        </tr>
                       ) : (
                         filteredList.map((item, index) => (
                           <tr key={item.id}>
@@ -1844,6 +1972,11 @@ const AdminKomitmen = () => {
                               )}
                             </td>
                             <td>{formatCurrency(item.nilaiKomitmen)}</td>
+                            <td>
+                              {formatCurrency(
+                                (item.rencanaDetail || []).reduce((sum, d) => sum + (d.nilaiRencana || 0), 0)
+                              )}
+                            </td>
                             <td>
                               {item.nilaiKontrakKeseluruhan && item.nilaiKontrakKeseluruhan > 0 ? (
                                 <span className="text-info fw-bold">
@@ -1881,6 +2014,19 @@ const AdminKomitmen = () => {
                                     {item.approvalNote && (
                                       <small className="text-danger mt-1" style={{ fontSize: '0.75rem' }}>
                                         <strong>Alasan:</strong> {item.approvalNote}
+                                      </small>
+                                    )}
+                                  </>
+                                )}
+                                {item.approvalStatus === 'revision_requested' && (
+                                  <>
+                                    <Badge bg="warning" text="dark">
+                                      <FaUndo className="me-1" />
+                                      Request Revisi
+                                    </Badge>
+                                    {item.revisiNote && (
+                                      <small className="text-warning mt-1" style={{ fontSize: '0.75rem' }}>
+                                        <strong>Catatan PIC:</strong> {item.revisiNote}
                                       </small>
                                     )}
                                   </>
@@ -1939,6 +2085,16 @@ const AdminKomitmen = () => {
                                 {item.approvalStatus === 'approved' && item.status !== 'selesai' && (
                                   <Button variant="success" size="sm" onClick={() => handleMarkAsCompleted(item)} title="Tandai Selesai">
                                     <FaCheckCircle /> Selesai
+                                  </Button>
+                                )}
+                                {item.approvalStatus === 'revision_requested' && (
+                                  <Button
+                                    variant="warning"
+                                    size="sm"
+                                    onClick={() => handleOpenApproveRevisi(item)}
+                                    title="Proses Request Revisi dari PIC"
+                                  >
+                                    <FaUndo className="me-1" /> Proses Revisi
                                   </Button>
                                 )}
                               </div>
@@ -2446,10 +2602,33 @@ const AdminKomitmen = () => {
                 {/* Summary Total Rencana */}
                 <Row className="mt-3">
                   <Col md={12}>
-                    <Alert variant="success" className="mb-0">
+                    <Alert variant={
+                      (() => {
+                        const totalRencana = rencanaRows.reduce((sum, row) => sum + parseRupiahInput(row.nilaiRencana), 0);
+                        const refKomitmen = parseRupiahInput(formData.komitmenKeseluruhan) > 0
+                          ? parseRupiahInput(formData.komitmenKeseluruhan)
+                          : parseRupiahInput(formData.nilaiKomitmen);
+                        if (refKomitmen > 0 && totalRencana > refKomitmen) return 'danger';
+                        return 'success';
+                      })()
+                    } className="mb-0">
                       <strong>Total Rencana Realisasi:</strong> {formatRupiahInput(
                         rencanaRows.reduce((sum, row) => sum + parseRupiahInput(row.nilaiRencana), 0).toString()
                       )}
+                      {(() => {
+                        const totalRencana = rencanaRows.reduce((sum, row) => sum + parseRupiahInput(row.nilaiRencana), 0);
+                        const refKomitmen = parseRupiahInput(formData.komitmenKeseluruhan) > 0
+                          ? parseRupiahInput(formData.komitmenKeseluruhan)
+                          : parseRupiahInput(formData.nilaiKomitmen);
+                        if (refKomitmen > 0 && totalRencana > refKomitmen) {
+                          return (
+                            <span className="ms-2 fw-bold">
+                              ⚠️ Melebihi {parseRupiahInput(formData.komitmenKeseluruhan) > 0 ? 'Komitmen Keseluruhan' : 'Komitmen Tahun Berjalan'} sebesar {formatRupiahInput((totalRencana - refKomitmen).toString())}! Data tidak dapat disimpan.
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
                     </Alert>
                   </Col>
                 </Row>
@@ -3133,7 +3312,13 @@ const AdminKomitmen = () => {
 
             <div className="d-flex justify-content-end gap-2 mt-3">
               <Button variant="secondary" onClick={handleCloseFormModal}>Batal</Button>
-              <Button variant="primary" type="submit" disabled={loading}>
+              <Button variant="primary" type="submit" disabled={loading || (() => {
+                const totalRencana = rencanaRows.reduce((sum, row) => sum + parseRupiahInput(row.nilaiRencana), 0);
+                const refKomitmen = parseRupiahInput(formData.komitmenKeseluruhan) > 0
+                  ? parseRupiahInput(formData.komitmenKeseluruhan)
+                  : parseRupiahInput(formData.nilaiKomitmen);
+                return refKomitmen > 0 && totalRencana > refKomitmen;
+              })()}>
                 {loading ? <Spinner animation="border" size="sm" /> : (editMode ? 'Update' : 'Simpan')}
               </Button>
             </div>
@@ -3569,6 +3754,67 @@ const AdminKomitmen = () => {
               {loading ? <Spinner animation="border" size="sm" /> : <><FaTimesCircle className="me-1" /> Reject</>}
             </Button>
           )}
+        </Modal.Footer>
+      </Modal>
+      {/* MODAL PROSES REQUEST REVISI */}
+      <Modal show={showApproveRevisiModal} onHide={() => setShowApproveRevisiModal(false)} centered>
+        <Modal.Header closeButton className="bg-warning">
+          <Modal.Title>
+            <FaUndo className="me-2" />
+            Proses Request Revisi dari PIC
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedRevisiItem && (
+            <>
+              <Alert variant="info" className="mb-3">
+                <strong>Paket:</strong> {selectedRevisiItem.namaPaket}<br />
+                <strong>ID:</strong> <span className="font-monospace">{selectedRevisiItem.idPaketMonitoring}</span><br />
+                <strong>AP:</strong> {selectedRevisiItem.namaAP}
+              </Alert>
+              <Alert variant="warning" className="mb-3">
+                <strong>Catatan/Alasan Revisi dari PIC:</strong><br />
+                <span className="text-dark">{selectedRevisiItem.revisiNote || '-'}</span>
+              </Alert>
+              <Form.Group className="mb-3">
+                <Form.Label>Catatan Admin (opsional untuk Setuju, wajib untuk Tolak)</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={approveRevisiNote}
+                  onChange={(e) => setApproveRevisiNote(e.target.value)}
+                  placeholder="Isi catatan untuk PIC..."
+                />
+              </Form.Group>
+              <Alert variant="secondary">
+                <small>
+                  <strong>Setuju Revisi:</strong> Status komitmen berubah ke <Badge bg="danger">Rejected</Badge> — PIC bisa edit komitmen awal lalu submit ulang.<br />
+                  <strong>Tolak Revisi:</strong> Status tetap <Badge bg="success">Approved</Badge> — PIC tidak bisa edit komitmen awal.
+                </small>
+              </Alert>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowApproveRevisiModal(false)}>
+            Batal
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleRejectRevisi}
+            disabled={submittingRevisi}
+            title="Tolak request revisi — status kembali Approved"
+          >
+            {submittingRevisi ? <Spinner animation="border" size="sm" /> : <><FaTimesCircle className="me-1" /> Tolak Revisi</>}
+          </Button>
+          <Button
+            variant="success"
+            onClick={handleApproveRevisi}
+            disabled={submittingRevisi}
+            title="Setuju revisi — PIC bisa edit komitmen awal"
+          >
+            {submittingRevisi ? <Spinner animation="border" size="sm" /> : <><FaCheckCircle className="me-1" /> Setuju Revisi</>}
+          </Button>
         </Modal.Footer>
       </Modal>
     </>
