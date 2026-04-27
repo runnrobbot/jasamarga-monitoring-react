@@ -952,7 +952,7 @@ const AdminKomitmen = () => {
         errors.push(`Baris ${rowNum}: Jenis Paket wajib diisi`);
       }
 
-      const validJenisPengadaan = ['Barang', 'Jasa Konsultasi', 'Jasa Lainnya', 'Pekerjaan Konstruksi'];
+      const validJenisPengadaan = ['Barang', 'Jasa Konsultansi', 'Jasa Lainnya', 'Pekerjaan Konstruksi'];
       if (!item['Jenis Pengadaan'] || !validJenisPengadaan.includes(item['Jenis Pengadaan'])) {
         errors.push(`Baris ${rowNum}: Jenis Pengadaan wajib diisi`);
       }
@@ -2305,7 +2305,7 @@ const AdminKomitmen = () => {
                         className={isKomitmenDisabled ? "bg-light" : ""}
                       >
                         <option value="Barang">Barang</option>
-                        <option value="Jasa Konsultasi">Jasa Konsultasi</option>
+                        <option value="Jasa Konsultansi">Jasa Konsultansi</option>
                         <option value="Jasa Lainnya">Jasa Lainnya</option>
                         <option value="Pekerjaan Konstruksi">Pekerjaan Konstruksi</option>
                       </Form.Select>

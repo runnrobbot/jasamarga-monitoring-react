@@ -1997,7 +1997,7 @@ const PICKomitmen = () => {
                       {filteredList.length === 0 ? (
                         <tr>
                           <td colSpan="11" className="text-center">Tidak ada data</td>
-                          </tr>
+                        </tr>
                       ) : (
                         filteredList.map((item, index) => (
                           <tr key={item.id}>
@@ -2291,7 +2291,7 @@ const PICKomitmen = () => {
                         className={isKomitmenDisabled ? "bg-light" : ""}
                       >
                         <option value="Barang">Barang</option>
-                        <option value="Jasa Konsultasi">Jasa Konsultasi</option>
+                        <option value="Jasa Konsultansi">Jasa Konsultansi</option>
                         <option value="Jasa Lainnya">Jasa Lainnya</option>
                         <option value="Pekerjaan Konstruksi">Pekerjaan Konstruksi</option>
                       </Form.Select>
