@@ -1949,7 +1949,8 @@ const AdminKomitmen = () => {
                     <tbody>
                       {filteredList.length === 0 ? (
                         <tr>
-                          <td colSpan="12" className="text-center">Tidak ada data</td>                        </tr>
+                          <td colSpan="12" className="text-center">Tidak ada data</td>
+                          </tr>
                       ) : (
                         filteredList.map((item, index) => (
                           <tr key={item.id}>

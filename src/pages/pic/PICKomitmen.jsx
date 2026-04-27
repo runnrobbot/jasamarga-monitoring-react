@@ -1996,7 +1996,8 @@ const PICKomitmen = () => {
                     <tbody>
                       {filteredList.length === 0 ? (
                         <tr>
-                          <td colSpan="11" className="text-center">Tidak ada data</td>                        </tr>
+                          <td colSpan="11" className="text-center">Tidak ada data</td>
+                          </tr>
                       ) : (
                         filteredList.map((item, index) => (
                           <tr key={item.id}>
