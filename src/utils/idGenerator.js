@@ -115,6 +115,12 @@ export const parseExcelDate = (value) => {
   return '';
 };
 
+/**
+ * Validasi data import dari Excel.
+ * Hanya Nama AP dan Nama Paket yang wajib diisi.
+ * Field lain bersifat opsional dan akan diisi dengan nilai default saat import,
+ * kemudian dapat dilengkapi melalui Edit di Tab Komitmen.
+ */
 export const validateImportData = (data) => {
   const errors = [];
   
@@ -123,133 +129,30 @@ export const validateImportData = (data) => {
     return errors;
   }
 
-  const requiredFields = [
-    'Jenis Paket',
-    'Nama AP',
-    'Nama Paket',
-    'Jenis Anggaran',
-    'Jenis Pengadaan',
-    'Metode Pemilihan',
-    'Status PaDi',
-    'Nilai Komitmen',
-    'Komitmen Keseluruhan',
-    'Waktu Pemanfaatan Dari',
-    'Waktu Pemanfaatan Sampai'
-  ];
-
-  const validJenisPaket = ['Single Year (SY)', 'Multi Year (MY)', 'SY', 'MY'];
-  const validJenisAnggaran = ['Opex', 'Capex'];
-  const validJenisPengadaan = ['Barang', 'Jasa Konsultasi', 'Jasa Lainnya', 'Pekerjaan Konstruksi'];
-  const validMetodePemilihan = [
-    'Tender/Seleksi Umum',
-    'Tender/Seleksi Terbatas',
-    'Penunjukan Langsung',
-    'Pengadaan Langsung',
-    'Penetapan Langsung'
-  ];
-  const validStatusPadi = ['PaDi', 'Non PaDi'];
-  const validStatus = ['active', 'inactive'];
-
   data.forEach((row, index) => {
     const rowNum = index + 2;
 
-    requiredFields.forEach(field => {
-      if (!row[field] || row[field].toString().trim() === '') {
-        errors.push(`Baris ${rowNum}: ${field} wajib diisi`);
-      }
-    });
-
-    if (row['PDN'] === undefined || row['PDN'] === null || row['PDN'] === '') {
-      errors.push(`Baris ${rowNum}: PDN wajib diisi (TRUE atau FALSE)`);
-    }
-    
-    if (row['TKDN'] === undefined || row['TKDN'] === null || row['TKDN'] === '') {
-      errors.push(`Baris ${rowNum}: TKDN wajib diisi (TRUE atau FALSE)`);
-    }
-    
-    if (row['Import'] === undefined || row['Import'] === null || row['Import'] === '') {
-      errors.push(`Baris ${rowNum}: Import wajib diisi (TRUE atau FALSE)`);
+    // Wajib: Nama Paket dan Nama AP
+    if (!row['Nama Paket'] || row['Nama Paket'].toString().trim() === '') {
+      errors.push(`Baris ${rowNum}: Nama Paket wajib diisi`);
     }
 
-    ['PDN', 'TKDN', 'Import'].forEach(field => {
-      if (row[field] !== undefined && row[field] !== null && row[field] !== '') {
-        const val = row[field].toString().toUpperCase();
-        if (val !== 'TRUE' && val !== 'FALSE') {
-          errors.push(`Baris ${rowNum}: ${field} harus TRUE atau FALSE`);
-        }
-      }
-    });
+    if (!row['Nama AP'] || row['Nama AP'].toString().trim() === '') {
+      errors.push(`Baris ${rowNum}: Nama AP wajib diisi`);
+    }
 
+    // Opsional: jika PDN/TKDN/Import diisi, hanya boleh 1 yang TRUE
     const pdnValue = parseExcelBoolean(row['PDN']);
     const tkdnValue = parseExcelBoolean(row['TKDN']);
     const importValue = parseExcelBoolean(row['Import']);
     
     const checkboxCount = [pdnValue, tkdnValue, importValue].filter(v => v === true).length;
     
-    if (checkboxCount === 0) {
-      errors.push(`Baris ${rowNum}: Minimal 1 checkbox harus TRUE (PDN, TKDN, atau Import)`);
-    }
-    
     if (checkboxCount > 1) {
-      errors.push(`Baris ${rowNum}: Hanya boleh 1 checkbox yang TRUE`);
+      errors.push(`Baris ${rowNum}: Hanya boleh 1 checkbox yang TRUE (PDN, TKDN, atau Import)`);
     }
 
-    if (pdnValue === true) {
-      if (!row['Nilai Tahun Berjalan PDN'] || parseFloat(row['Nilai Tahun Berjalan PDN']) <= 0) {
-        errors.push(`Baris ${rowNum}: Nilai Tahun Berjalan PDN wajib diisi karena PDN = TRUE`);
-      }
-      if (!row['Nilai Keseluruhan PDN'] || parseFloat(row['Nilai Keseluruhan PDN']) <= 0) {
-        errors.push(`Baris ${rowNum}: Nilai Keseluruhan PDN wajib diisi karena PDN = TRUE`);
-      }
-    }
-
-    if (tkdnValue === true) {
-      if (!row['Nilai Tahun Berjalan TKDN'] || parseFloat(row['Nilai Tahun Berjalan TKDN']) <= 0) {
-        errors.push(`Baris ${rowNum}: Nilai Tahun Berjalan TKDN wajib diisi karena TKDN = TRUE`);
-      }
-      if (!row['Nilai Keseluruhan TKDN'] || parseFloat(row['Nilai Keseluruhan TKDN']) <= 0) {
-        errors.push(`Baris ${rowNum}: Nilai Keseluruhan TKDN wajib diisi karena TKDN = TRUE`);
-      }
-    }
-
-    if (importValue === true) {
-      if (!row['Nilai Tahun Berjalan Import'] || parseFloat(row['Nilai Tahun Berjalan Import']) <= 0) {
-        errors.push(`Baris ${rowNum}: Nilai Tahun Berjalan Import wajib diisi karena Import = TRUE`);
-      }
-      if (!row['Nilai Keseluruhan Import'] || parseFloat(row['Nilai Keseluruhan Import']) <= 0) {
-        errors.push(`Baris ${rowNum}: Nilai Keseluruhan Import wajib diisi karena Import = TRUE`);
-      }
-    }
-
-    const hasNilaiRencana = row['Nilai Rencana'] && parseFloat(row['Nilai Rencana']) > 0;
-    const hasTahunRencana = row['Tahun Rencana'] && row['Tahun Rencana'].toString().trim() !== '';
-
-    const isMY = row['Jenis Paket'] === 'Multi Year (MY)' || row['Jenis Paket'] === 'MY';
-    
-    if (hasNilaiRencana && isMY && !hasTahunRencana) {
-      errors.push(`Baris ${rowNum}: Tahun Rencana wajib diisi untuk Multi Year jika ada Nilai Rencana`);
-    }
-
-    if (row['Jenis Paket'] && !validJenisPaket.includes(row['Jenis Paket'])) {
-      errors.push(`Baris ${rowNum}: Jenis Paket harus "Single Year (SY)" atau "Multi Year (MY)"`);
-    }
-
-    if (row['Jenis Anggaran'] && !validJenisAnggaran.includes(row['Jenis Anggaran'])) {
-      errors.push(`Baris ${rowNum}: Jenis Anggaran harus "Opex" atau "Capex"`);
-    }
-
-    if (row['Jenis Pengadaan'] && !validJenisPengadaan.includes(row['Jenis Pengadaan'])) {
-      errors.push(`Baris ${rowNum}: Jenis Pengadaan tidak valid`);
-    }
-
-    if (row['Metode Pemilihan'] && !validMetodePemilihan.includes(row['Metode Pemilihan'])) {
-      errors.push(`Baris ${rowNum}: Metode Pemilihan tidak valid`);
-    }
-
-    if (row['Status PaDi'] && !validStatusPadi.includes(row['Status PaDi'])) {
-      errors.push(`Baris ${rowNum}: Status PaDi harus "PaDi" atau "Non PaDi"`);
-    }
-
+    // Opsional: nilai numerik jika diisi harus berupa angka
     const numericFields = [
       'Nilai Komitmen', 
       'Komitmen Keseluruhan', 
@@ -265,54 +168,31 @@ export const validateImportData = (data) => {
     ];
     
     numericFields.forEach(field => {
-      if (row[field]) {
+      if (row[field] !== undefined && row[field] !== null && row[field] !== '') {
         const value = parseFloat(row[field]);
         if (isNaN(value)) {
           errors.push(`Baris ${rowNum}: ${field} harus berupa angka`);
-        } else if ((field === 'Nilai Komitmen' || field === 'Komitmen Keseluruhan') && value <= 0) {
-          errors.push(`Baris ${rowNum}: ${field} harus lebih besar dari 0`);
         }
       }
     });
 
+    // Opsional: format tanggal jika diisi harus valid
     const dateFields = ['Waktu Pemanfaatan Dari', 'Waktu Pemanfaatan Sampai'];  
-      dateFields.forEach(field => {
-        if (row[field]) {
-          const originalValue = row[field];
-          
-          // Coba parse dulu
-          const parsedDate = parseExcelDate(originalValue);
-          
-          // Jika hasil parse kosong atau invalid, beri error
-          if (!parsedDate || parsedDate === '') {
-            errors.push(`Baris ${rowNum}: ${field} format tidak valid. Gunakan DD/MM/YYYY (contoh: 02/02/2028)`);
-            return;
-          }
-          
-          // Validasi apakah hasil parse adalah tanggal yang valid
-          const [year, month, day] = parsedDate.split('-').map(Number);
-          const date = new Date(year, month - 1, day);
-          
-          if (
-            date.getFullYear() !== year ||
-            date.getMonth() !== month - 1 ||
-            date.getDate() !== day
-          ) {
-            errors.push(`Baris ${rowNum}: ${field} tanggal tidak valid`);
-          }
+    dateFields.forEach(field => {
+      if (row[field] !== undefined && row[field] !== null && row[field] !== '') {
+        const parsedDate = parseExcelDate(row[field]);
+        if (!parsedDate || parsedDate === '') {
+          errors.push(`Baris ${rowNum}: ${field} format tidak valid. Gunakan DD/MM/YYYY (contoh: 02/02/2028)`);
         }
-      });
+      }
+    });
 
+    // Opsional: Bulan Rencana jika diisi harus 1-12
     if (row['Bulan Rencana']) {
       const bulanValue = parseInt(row['Bulan Rencana']);
-      
       if (isNaN(bulanValue) || bulanValue < 1 || bulanValue > 12) {
         errors.push(`Baris ${rowNum}: Bulan Rencana harus angka 1-12 (1=Januari, 12=Desember)`);
       }
-    }
-
-    if (row['Status'] && !validStatus.includes(row['Status'])) {
-      errors.push(`Baris ${rowNum}: Status harus "active" atau "inactive"`);
     }
   });
 

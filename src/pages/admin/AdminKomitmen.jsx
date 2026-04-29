@@ -16,6 +16,7 @@ import { id } from 'date-fns/locale';
 
 import { addNotification } from '../../utils/notificationService';
 import { generateIdPaket, parseExcelBoolean, validateImportData, parseExcelDate } from '../../utils/idGenerator';
+import ImportWizardModal from '../../components/ImportWizardModal';
 
 const AdminKomitmen = () => {
   const { user } = useAuth();
@@ -49,9 +50,8 @@ const AdminKomitmen = () => {
   const [submittingRevisi, setSubmittingRevisi] = useState(false);
 
   const [users, setUsers] = useState({});
-  const [showImportRealisasiModal, setShowImportRealisasiModal] = useState(false);
-  const [importedDataNeedRealisasi, setImportedDataNeedRealisasi] = useState([]);
-  const [currentImportIndex, setCurrentImportIndex] = useState(0);
+  const [showWizard, setShowWizard] = useState(false);
+  const [wizardItems, setWizardItems] = useState([]);
 
   const [realisasiRows, setRealisasiRows] = useState([{
     id: Date.now(),
@@ -471,8 +471,8 @@ const AdminKomitmen = () => {
         return;
       }
 
-      if (!formData.namaPaket || !formData.namaAP || !formData.nilaiKomitmen) {
-        toast.error('Mohon lengkapi semua field wajib di Tab Komitmen Awal (Nama Paket, Nama AP, Nilai Komitmen)');
+      if (!formData.namaPaket || !formData.namaAP) {
+        toast.error('Mohon lengkapi field wajib: Nama Paket dan Nama AP');
         setLoading(false);
         return;
       }
@@ -521,21 +521,9 @@ const AdminKomitmen = () => {
         }
       }
 
-      if (!formData.waktuPemanfaatanDari || !formData.waktuPemanfaatanSampai) {
-        toast.error('Waktu Pemanfaatan Dari dan Sampai wajib diisi');
-        setLoading(false);
-        return;
-      }
-
       const hasRealisasiData = realisasiRows.some(row =>
         row.realisasi && parseRupiahInput(row.realisasi) > 0
       );
-
-      if (!hasRealisasiData && !editMode) {
-        toast.error('Mohon isi minimal 1 baris Detail Realisasi per Periode di Tab Realisasi');
-        setLoading(false);
-        return;
-      }
 
       if (hasRealisasiData) {
         const invalidRealisasiRow = realisasiRows.find((row, index) => {
@@ -735,6 +723,10 @@ const AdminKomitmen = () => {
             k.id === selectedKomitmen.id ? { ...k, ...updateData } : k
           ));
         } else {
+          // Jika ini adalah komitmen yang diimport, hapus flag needRealisasi setelah diupdate
+          if (selectedKomitmen?.needRealisasi) {
+            dataToSave.needRealisasi = false;
+          }
           await updateDoc(doc(db, 'komitmen', selectedKomitmen.id), dataToSave);
           toast.success('Data berhasil diupdate');
           setKomitmenList(prev => prev.map(k =>
@@ -934,43 +926,13 @@ const AdminKomitmen = () => {
     data.forEach((item, index) => {
       const rowNum = index + 2;
 
+      // Hanya Nama Paket dan Nama AP yang wajib diisi — field lain bisa dilengkapi di Tab Komitmen
       if (!item['Nama Paket'] || item['Nama Paket'].toString().trim() === '') {
         errors.push(`Baris ${rowNum}: Nama Paket wajib diisi`);
       }
 
       if (!item['Nama AP'] || item['Nama AP'].toString().trim() === '') {
         errors.push(`Baris ${rowNum}: Nama AP wajib diisi`);
-      }
-
-      const nilaiKomitmen = parseFloat(item['Nilai Komitmen']);
-      if (!item['Nilai Komitmen'] || isNaN(nilaiKomitmen) || nilaiKomitmen <= 0) {
-        errors.push(`Baris ${rowNum}: Nilai Komitmen wajib diisi dan harus lebih dari 0`);
-      }
-
-      const validJenisPaket = ['Single Year (SY)', 'Multi Year (MY)'];
-      if (!item['Jenis Paket'] || !validJenisPaket.includes(item['Jenis Paket'])) {
-        errors.push(`Baris ${rowNum}: Jenis Paket wajib diisi`);
-      }
-
-      const validJenisPengadaan = ['Barang', 'Jasa Konsultansi', 'Jasa Lainnya', 'Pekerjaan Konstruksi'];
-      if (!item['Jenis Pengadaan'] || !validJenisPengadaan.includes(item['Jenis Pengadaan'])) {
-        errors.push(`Baris ${rowNum}: Jenis Pengadaan wajib diisi`);
-      }
-
-      const validMetode = [
-        'Tender/Seleksi Umum',
-        'Tender/Seleksi Terbatas',
-        'Penunjukan Langsung',
-        'Pengadaan Langsung',
-        'Penetapan Langsung'
-      ];
-      if (!item['Metode Pemilihan'] || !validMetode.includes(item['Metode Pemilihan'])) {
-        errors.push(`Baris ${rowNum}: Metode Pemilihan wajib diisi`);
-      }
-
-      const validJenisAnggaran = ['Opex', 'Capex'];
-      if (!item['Jenis Anggaran'] || !validJenisAnggaran.includes(item['Jenis Anggaran'])) {
-        errors.push(`Baris ${rowNum}: Jenis Anggaran wajib diisi`);
       }
 
       const parseCheckbox = (value) => {
@@ -1057,27 +1019,36 @@ const AdminKomitmen = () => {
         }
 
         let idPaket = item['ID Paket Monitoring'];
+        // Resolve jenisPaket with default before generating ID
+        const resolvedJenisPaket = ['Single Year (SY)', 'Multi Year (MY)'].includes(item['Jenis Paket'])
+          ? item['Jenis Paket']
+          : 'Single Year (SY)';
         if (!idPaket || idPaket.trim() === '') {
           idPaket = await generateIdPaket(
-            item['Jenis Paket'],
+            resolvedJenisPaket,
             selectedAP.singkatanAP
           );
         }
 
+        const validJenisPaket = ['Single Year (SY)', 'Multi Year (MY)'];
+        const validJenisPengadaan = ['Barang', 'Jasa Konsultansi', 'Jasa Lainnya', 'Pekerjaan Konstruksi'];
+        const validMetode = ['Tender/Seleksi Umum', 'Tender/Seleksi Terbatas', 'Penunjukan Langsung', 'Pengadaan Langsung', 'Penetapan Langsung'];
+        const validJenisAnggaran = ['Opex', 'Capex'];
+
         const dataToImport = {
           idPaketMonitoring: idPaket,
-          jenisPaket: item['Jenis Paket'],
+          jenisPaket: resolvedJenisPaket,
           idRUP: item['ID RUP'] || '',
           namaAP: item['Nama AP'],
           namaPaket: item['Nama Paket'],
-          jenisAnggaran: item['Jenis Anggaran'],
-          jenisPengadaan: item['Jenis Pengadaan'],
-          usulanMetodePemilihan: item['Metode Pemilihan'],
+          jenisAnggaran: validJenisAnggaran.includes(item['Jenis Anggaran']) ? item['Jenis Anggaran'] : 'Opex',
+          jenisPengadaan: validJenisPengadaan.includes(item['Jenis Pengadaan']) ? item['Jenis Pengadaan'] : 'Barang',
+          usulanMetodePemilihan: validMetode.includes(item['Metode Pemilihan']) ? item['Metode Pemilihan'] : 'Tender/Seleksi Umum',
           statusPadi: item['Status PaDi'] || 'Non PaDi',
           nilaiKomitmen: parseFloat(item['Nilai Komitmen']) || 0,
           komitmenKeseluruhan: parseFloat(item['Komitmen Keseluruhan']) || 0,
-          waktuPemanfaatanDari: parseExcelDate(item['Waktu Pemanfaatan Dari']),
-          waktuPemanfaatanSampai: parseExcelDate(item['Waktu Pemanfaatan Sampai']),
+          waktuPemanfaatanDari: parseExcelDate(item['Waktu Pemanfaatan Dari']) || '',
+          waktuPemanfaatanSampai: parseExcelDate(item['Waktu Pemanfaatan Sampai']) || '',
           rencanaDetail: item['Nilai Rencana'] && parseFloat(item['Nilai Rencana']) > 0
             ? [{
               tahunRencana: item['Tahun Rencana'] || '',
@@ -1106,11 +1077,12 @@ const AdminKomitmen = () => {
           nilaiTKDN: 0,
           nilaiImpor: 0,
           namaPengadaanRealisasi: '',
-          metodePemilihanRealisasi: item['Metode Pemilihan'],
+          metodePemilihanRealisasi: validMetode.includes(item['Metode Pemilihan']) ? item['Metode Pemilihan'] : '',
           progres: '0',
           sisaPembayaran: parseFloat(item['Nilai Komitmen']) || 0,
           catatanKomitmen: item['Catatan Komitmen'] || '',
           keterangan: '',
+          approvalStatus: 'draft',
           status: item['Status'] || 'active',
           isActive: item['Status'] !== 'inactive',
           idUser: user?.uid || '',
@@ -1135,26 +1107,22 @@ const AdminKomitmen = () => {
 
       await batch.commit();
 
-      toast.success(`${dataReadyToImport.length} data komitmen berhasil diimport!`);
       setShowImportModal(false);
       setImportPreview([]);
       setImportErrors([]);
 
-      const needRealisasiData = savedIds.filter(item => item.needRealisasi);
-      if (needRealisasiData.length > 0) {
-        setImportedDataNeedRealisasi(needRealisasiData);
-        setCurrentImportIndex(0);
-        setShowImportRealisasiModal(true);
-        loadImportedDataToForm(needRealisasiData[0]);
-      }
+      try {
+        await addNotification(
+          user?.uid || '',
+          'success',
+          'Import Data',
+          `Berhasil import ${dataReadyToImport.length} data komitmen.`,
+          { action: 'import', count: dataReadyToImport.length }
+        );
+      } catch (_) {}
 
-      await addNotification(
-        user?.uid || '',
-        'success',
-        'Import Data',
-        `Berhasil import ${dataReadyToImport.length} data komitmen. Silakan isi realisasi untuk setiap data.`,
-        { action: 'import', count: dataReadyToImport.length }
-      );
+      setWizardItems(savedIds);
+      setShowWizard(true);
 
     } catch (error) {
       console.error('Error importing:', error);
@@ -1164,166 +1132,6 @@ const AdminKomitmen = () => {
     }
   };
 
-  const loadImportedDataToForm = (dataItem) => {
-    setFormData({
-      idPaketMonitoring: dataItem.idPaketMonitoring || '',
-      jenisPaket: dataItem.jenisPaket || 'Single Year (SY)',
-      idRUP: dataItem.idRUP || '',
-      namaAP: dataItem.namaAP || '',
-      namaPaket: dataItem.namaPaket || '',
-      jenisAnggaran: dataItem.jenisAnggaran || 'Opex',
-      jenisPengadaan: dataItem.jenisPengadaan || 'Barang',
-      usulanMetodePemilihan: dataItem.usulanMetodePemilihan || 'Tender/Seleksi Umum',
-      statusPadi: dataItem.statusPadi || 'Non PaDi',
-      nilaiKomitmen: formatRupiahInput(dataItem.nilaiKomitmen?.toString() || ''),
-      komitmenKeseluruhan: formatRupiahInput(dataItem.komitmenKeseluruhan?.toString() || ''),
-      waktuPemanfaatanDari: dataItem.waktuPemanfaatanDari || '',
-      waktuPemanfaatanSampai: dataItem.waktuPemanfaatanSampai || '',
-      pdnCheckbox: dataItem.pdnCheckbox || false,
-      tkdnCheckbox: dataItem.tkdnCheckbox || false,
-      importCheckbox: dataItem.importCheckbox || false,
-      targetNilaiTKDN: formatRupiahInput(dataItem.targetNilaiTKDN?.toString() || ''),
-      nilaiAnggaranBelanja: formatRupiahInput(dataItem.nilaiAnggaranBelanja?.toString() || ''),
-      nilaiKontrakKeseluruhan: '',
-      namaPenyedia: '',
-      kualifikasiPenyedia: 'UMKM',
-      nilaiPDN: '',
-      nilaiTKDN: '',
-      nilaiImpor: '',
-      namaPengadaanRealisasi: '',
-      metodePemilihanRealisasi: dataItem.metodePemilihanRealisasi || '',
-      progres: '0',
-      sisaPembayaran: formatRupiahInput(dataItem.nilaiKomitmen?.toString() || ''),
-      catatanKomitmen: dataItem.catatanKomitmen || '',
-      keterangan: '',
-      status: 'active',
-      isActive: true,
-      idUser: dataItem.idUser || ''
-    });
-
-    setRealisasiRows([{
-      id: Date.now(),
-      tahunRealisasi: '',
-      bulanRealisasi: '',
-      realisasi: '',
-      nomorInvoice: '',
-      tanggalInvoice: '',
-      dokumen: null
-    }]);
-  };
-
-  const handleSaveImportedRealisasi = async () => {
-    try {
-      setLoading(true);
-
-      const currentData = importedDataNeedRealisasi[currentImportIndex];
-      const hasRealisasiData = realisasiRows.some(row =>
-        row.realisasi && parseRupiahInput(row.realisasi) > 0
-      );
-
-      if (!hasRealisasiData) {
-        toast.error('Mohon isi minimal 1 baris Detail Realisasi per Periode');
-        setLoading(false);
-        return;
-      }
-
-      if (hasRealisasiData) {
-        const invalidRealisasiRow = realisasiRows.find((row, index) => {
-          const hasAmount = row.realisasi && parseRupiahInput(row.realisasi) > 0;
-          if (hasAmount) {
-            if (!row.bulanRealisasi || !row.nomorInvoice) {
-              toast.error(`Baris realisasi ${index + 1}: Bulan dan Nomor Invoice wajib diisi`);
-              return true;
-            }
-          }
-          return false;
-        });
-
-        if (invalidRealisasiRow) {
-          setLoading(false);
-          return;
-        }
-      }
-
-      if (!formData.namaPenyedia) {
-        toast.error('Nama Penyedia wajib diisi');
-        setLoading(false);
-        return;
-      }
-
-      const totalRealisasi = realisasiRows.reduce((sum, row) => {
-        return sum + parseRupiahInput(row.realisasi);
-      }, 0);
-
-      const updateData = {
-        realisasi: totalRealisasi,
-        realisasiDetail: realisasiRows.map(row => ({
-          tahunRealisasi: row.tahunRealisasi,
-          bulanRealisasi: row.bulanRealisasi,
-          realisasi: parseRupiahInput(row.realisasi),
-          nomorInvoice: row.nomorInvoice,
-          tanggalInvoice: row.tanggalInvoice,
-          dokumen: row.dokumen,
-          namaPenyedia: row.namaPenyedia || formData.namaPenyedia
-        })),
-        namaPenyedia: formData.namaPenyedia,
-        kualifikasiPenyedia: formData.kualifikasiPenyedia,
-        nilaiKontrakKeseluruhan: parseRupiahInput(formData.nilaiKontrakKeseluruhan),
-        nilaiPDN: parseRupiahInput(formData.nilaiPDN),
-        nilaiTKDN: parseRupiahInput(formData.nilaiTKDN),
-        nilaiImpor: parseRupiahInput(formData.nilaiImpor),
-        namaPengadaanRealisasi: formData.namaPengadaanRealisasi,
-        metodePemilihanRealisasi: formData.metodePemilihanRealisasi,
-        progres: formData.progres,
-        sisaPembayaran: parseRupiahInput(formData.sisaPembayaran),
-        keterangan: formData.keterangan,
-        needRealisasi: false,
-        updatedAt: new Date(),
-        updatedBy: user?.email || user?.displayName || ''
-      };
-
-      const komitmenDocs = await getDocs(
-        query(collection(db, 'komitmen'), where('idPaketMonitoring', '==', currentData.idPaketMonitoring))
-      );
-
-      if (!komitmenDocs.empty) {
-        const docId = komitmenDocs.docs[0].id;
-        await updateDoc(doc(db, 'komitmen', docId), updateData);
-        toast.success(`Realisasi untuk "${currentData.namaPaket}" berhasil disimpan`);
-
-        if (currentImportIndex < importedDataNeedRealisasi.length - 1) {
-          const nextIndex = currentImportIndex + 1;
-          setCurrentImportIndex(nextIndex);
-          loadImportedDataToForm(importedDataNeedRealisasi[nextIndex]);
-        } else {
-          toast.success('Semua data import berhasil dilengkapi realisasinya!');
-          setShowImportRealisasiModal(false);
-          setImportedDataNeedRealisasi([]);
-          setCurrentImportIndex(0);
-        }
-      }
-
-    } catch (error) {
-      console.error('Error saving realisasi:', error);
-      toast.error('Gagal menyimpan realisasi');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSkipImportedRealisasi = () => {
-    if (currentImportIndex < importedDataNeedRealisasi.length - 1) {
-      const nextIndex = currentImportIndex + 1;
-      setCurrentImportIndex(nextIndex);
-      loadImportedDataToForm(importedDataNeedRealisasi[nextIndex]);
-      toast.info('Dilewati. Anda bisa mengisi realisasi nanti via Edit.');
-    } else {
-      setShowImportRealisasiModal(false);
-      setImportedDataNeedRealisasi([]);
-      setCurrentImportIndex(0);
-      toast.info('Import selesai. Data yang dilewati bisa diisi realisasi via Edit.');
-    }
-  };
 
   const formatCurrency = (value) => {
     if (!value) return 'Rp 0';
@@ -2129,7 +1937,7 @@ const AdminKomitmen = () => {
           )}
           <Alert variant="info">
             <strong>Total data:</strong> {importPreview.length} baris akan diimport<br />
-            <small className="text-muted">⚠️ Setelah import, Anda akan diminta untuk mengisi Tab Realisasi untuk setiap data</small>
+            <small className="text-muted">ℹ️ Setelah import, data akan masuk ke Tab Komitmen. Field yang belum terisi dapat dilengkapi melalui Edit di Tab Komitmen (opsional).</small>
           </Alert>
           <div className="table-responsive">
             <Table striped bordered hover size="sm">
@@ -3818,6 +3626,12 @@ const AdminKomitmen = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+      <ImportWizardModal
+        show={showWizard}
+        items={wizardItems}
+        user={user}
+        onClose={() => { setShowWizard(false); setWizardItems([]); }}
+      />
     </>
   );
 };
