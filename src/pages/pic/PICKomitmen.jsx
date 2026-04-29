@@ -17,6 +17,7 @@ import { id } from 'date-fns/locale';
 import { generateIdPaket, parseExcelBoolean, validateImportData, parseExcelDate } from '../../utils/idGenerator';
 import { addNotification } from '../../utils/notificationService';
 import { checkAPSchedule, getAPScheduleInfo, formatScheduleStatus } from '../../utils/scheduleValidator';
+import ImportWizardModal from '../../components/ImportWizardModal';
 
 
 const PICKomitmen = () => {
@@ -41,9 +42,8 @@ const PICKomitmen = () => {
   const [scheduleStatus, setScheduleStatus] = useState(null);
   const [scheduleAllowed, setScheduleAllowed] = useState(false);
 
-  const [showImportRealisasiModal, setShowImportRealisasiModal] = useState(false);
-  const [importedDataNeedRealisasi, setImportedDataNeedRealisasi] = useState([]);
-  const [currentImportIndex, setCurrentImportIndex] = useState(0);
+  const [showWizard, setShowWizard] = useState(false);
+  const [wizardItems, setWizardItems] = useState([]);
 
   const { user } = useAuth();
   const [komitmenList, setKomitmenList] = useState([]);
@@ -590,8 +590,8 @@ const PICKomitmen = () => {
         return;
       }
 
-      if (!formData.namaPaket || !formData.namaAP || !formData.nilaiKomitmen) {
-        toast.error('Mohon lengkapi semua field wajib di Tab Komitmen Awal (Nama Paket, Nama AP, Nilai Komitmen)');
+      if (!formData.namaPaket || !formData.namaAP) {
+        toast.error('Mohon lengkapi field wajib: Nama Paket dan Nama AP');
         setLoading(false);
         return;
       }
@@ -645,7 +645,9 @@ const PICKomitmen = () => {
             row.realisasi && parseRupiahInput(row.realisasi) > 0
           );
 
-          if (!hasRealisasiData) {
+          // Realisasi wajib untuk edit normal, tapi opsional untuk data import (needRealisasi: true)
+          const isImportedKomitmen = selectedKomitmen?.needRealisasi === true;
+          if (!hasRealisasiData && !isImportedKomitmen) {
             toast.error('Mohon isi minimal 1 baris Detail Realisasi per Periode di Tab Realisasi');
             setLoading(false);
             return;
@@ -1347,27 +1349,36 @@ const PICKomitmen = () => {
         }
 
         let idPaket = item['ID Paket Monitoring'];
+        // Resolve jenisPaket with default before generating ID
+        const resolvedJenisPaket = ['Single Year (SY)', 'Multi Year (MY)'].includes(item['Jenis Paket'])
+          ? item['Jenis Paket']
+          : 'Single Year (SY)';
         if (!idPaket || idPaket.trim() === '') {
           idPaket = await generateIdPaket(
-            item['Jenis Paket'],
+            resolvedJenisPaket,
             selectedAP.singkatanAP
           );
         }
 
+        const validJenisPaket = ['Single Year (SY)', 'Multi Year (MY)'];
+        const validJenisPengadaan = ['Barang', 'Jasa Konsultansi', 'Jasa Lainnya', 'Pekerjaan Konstruksi'];
+        const validMetode = ['Tender/Seleksi Umum', 'Tender/Seleksi Terbatas', 'Penunjukan Langsung', 'Pengadaan Langsung', 'Penetapan Langsung'];
+        const validJenisAnggaran = ['Opex', 'Capex'];
+
         const dataToImport = {
           idPaketMonitoring: idPaket,
-          jenisPaket: item['Jenis Paket'],
+          jenisPaket: resolvedJenisPaket,
           idRUP: item['ID RUP'] || '',
           namaAP: item['Nama AP'],
           namaPaket: item['Nama Paket'],
-          jenisAnggaran: item['Jenis Anggaran'],
-          jenisPengadaan: item['Jenis Pengadaan'],
-          usulanMetodePemilihan: item['Metode Pemilihan'],
+          jenisAnggaran: validJenisAnggaran.includes(item['Jenis Anggaran']) ? item['Jenis Anggaran'] : 'Opex',
+          jenisPengadaan: validJenisPengadaan.includes(item['Jenis Pengadaan']) ? item['Jenis Pengadaan'] : 'Barang',
+          usulanMetodePemilihan: validMetode.includes(item['Metode Pemilihan']) ? item['Metode Pemilihan'] : 'Tender/Seleksi Umum',
           statusPadi: item['Status PaDi'] || 'Non PaDi',
           nilaiKomitmen: parseFloat(item['Nilai Komitmen']) || 0,
           komitmenKeseluruhan: parseFloat(item['Komitmen Keseluruhan']) || 0,
-          waktuPemanfaatanDari: parseExcelDate(item['Waktu Pemanfaatan Dari']),
-          waktuPemanfaatanSampai: parseExcelDate(item['Waktu Pemanfaatan Sampai']),
+          waktuPemanfaatanDari: parseExcelDate(item['Waktu Pemanfaatan Dari']) || '',
+          waktuPemanfaatanSampai: parseExcelDate(item['Waktu Pemanfaatan Sampai']) || '',
           rencanaDetail: item['Nilai Rencana'] && parseFloat(item['Nilai Rencana']) > 0
             ? [{
               tahunRencana: item['Tahun Rencana'] || '',
@@ -1396,11 +1407,12 @@ const PICKomitmen = () => {
           nilaiTKDN: 0,
           nilaiImpor: 0,
           namaPengadaanRealisasi: '',
-          metodePemilihanRealisasi: item['Metode Pemilihan'],
+          metodePemilihanRealisasi: validMetode.includes(item['Metode Pemilihan']) ? item['Metode Pemilihan'] : '',
           progres: '0',
           sisaPembayaran: parseFloat(item['Nilai Komitmen']) || 0,
           catatanKomitmen: item['Catatan Komitmen'] || '',
           keterangan: '',
+          approvalStatus: 'draft',
           status: item['Status'] || 'active',
           isActive: item['Status'] !== 'inactive',
           idUser: user?.uid || '',
@@ -1431,30 +1443,17 @@ const PICKomitmen = () => {
           user?.uid || '',
           'success',
           'Import Data Berhasil',
-          `${dataReadyToImport.length} komitmen berhasil diimport. Silakan isi realisasi untuk setiap data.`,
-          {
-            action: 'import',
-            count: dataReadyToImport.length,
-            namaAP: userAP
-          }
+          `${dataReadyToImport.length} komitmen berhasil diimport.`,
+          { action: 'import', count: dataReadyToImport.length, namaAP: userAP }
         );
-      } catch (notifError) {
-        console.error('Error sending notification:', notifError);
-      }
+      } catch (_) {}
 
       setShowImportModal(false);
       setImportPreview([]);
       setImportErrors([]);
 
-      await fetchKomitmen();
-
-      const needRealisasiData = savedIds.filter(item => item.needRealisasi);
-      if (needRealisasiData.length > 0) {
-        setImportedDataNeedRealisasi(needRealisasiData);
-        setCurrentImportIndex(0);
-        setShowImportRealisasiModal(true);
-        loadImportedDataToForm(needRealisasiData[0]);
-      }
+      setWizardItems(savedIds);
+      setShowWizard(true);
 
     } catch (error) {
       console.error('Error importing:', error);
@@ -1479,168 +1478,7 @@ const PICKomitmen = () => {
     }
   };
 
-  const loadImportedDataToForm = (dataItem) => {
-    setFormData({
-      idPaketMonitoring: dataItem.idPaketMonitoring || '',
-      jenisPaket: dataItem.jenisPaket || 'Single Year (SY)',
-      idRUP: dataItem.idRUP || '',
-      namaAP: dataItem.namaAP || '',
-      namaPaket: dataItem.namaPaket || '',
-      jenisAnggaran: dataItem.jenisAnggaran || 'Opex',
-      jenisPengadaan: dataItem.jenisPengadaan || 'Barang',
-      usulanMetodePemilihan: dataItem.usulanMetodePemilihan || 'Tender/Seleksi Umum',
-      statusPadi: dataItem.statusPadi || 'Non PaDi',
-      nilaiKomitmen: formatRupiahInput(dataItem.nilaiKomitmen?.toString() || ''),
-      komitmenKeseluruhan: formatRupiahInput(dataItem.komitmenKeseluruhan?.toString() || ''),
-      waktuPemanfaatanDari: dataItem.waktuPemanfaatanDari || '',
-      waktuPemanfaatanSampai: dataItem.waktuPemanfaatanSampai || '',
-      pdnCheckbox: dataItem.pdnCheckbox || false,
-      tkdnCheckbox: dataItem.tkdnCheckbox || false,
-      importCheckbox: dataItem.importCheckbox || false,
-      targetNilaiTKDN: formatRupiahInput(dataItem.targetNilaiTKDN?.toString() || ''),
-      nilaiAnggaranBelanja: formatRupiahInput(dataItem.nilaiAnggaranBelanja?.toString() || ''),
-      nilaiKontrakKeseluruhan: '',
-      namaPenyedia: '',
-      kualifikasiPenyedia: 'UMKM',
-      nilaiPDN: '',
-      nilaiTKDN: '',
-      nilaiImpor: '',
-      namaPengadaanRealisasi: '',
-      metodePemilihanRealisasi: dataItem.metodePemilihanRealisasi || '',
-      progres: '0',
-      sisaPembayaran: formatRupiahInput(dataItem.nilaiKomitmen?.toString() || ''),
-      catatanKomitmen: dataItem.catatanKomitmen || '',
-      keterangan: '',
-      status: 'active',
-      isActive: true,
-      idUser: dataItem.idUser || ''
-    });
 
-    setRealisasiRows([{
-      id: Date.now(),
-      tahunRealisasi: '',
-      bulanRealisasi: '',
-      realisasi: '',
-      nomorInvoice: '',
-      tanggalInvoice: '',
-      dokumen: null
-    }]);
-  };
-
-  const handleSaveImportedRealisasi = async () => {
-    try {
-      setLoading(true);
-
-      const currentData = importedDataNeedRealisasi[currentImportIndex];
-
-      const hasRealisasiData = realisasiRows.some(row =>
-        row.realisasi && parseRupiahInput(row.realisasi) > 0
-      );
-
-      if (!hasRealisasiData) {
-        toast.error('Mohon isi minimal 1 baris Detail Realisasi per Periode');
-        setLoading(false);
-        return;
-      }
-
-      if (hasRealisasiData) {
-        const invalidRealisasiRow = realisasiRows.find((row, index) => {
-          const hasAmount = row.realisasi && parseRupiahInput(row.realisasi) > 0;
-          if (hasAmount) {
-            if (!row.bulanRealisasi || !row.nomorInvoice) {
-              toast.error(`Baris realisasi ${index + 1}: Bulan dan Nomor Invoice wajib diisi`);
-              return true;
-            }
-          }
-          return false;
-        });
-
-        if (invalidRealisasiRow) {
-          setLoading(false);
-          return;
-        }
-      }
-
-      if (!formData.namaPenyedia) {
-        toast.error('Nama Penyedia wajib diisi');
-        setLoading(false);
-        return;
-      }
-
-      const totalRealisasi = realisasiRows.reduce((sum, row) => {
-        return sum + parseRupiahInput(row.realisasi);
-      }, 0);
-
-      const updateData = {
-        realisasi: totalRealisasi,
-        realisasiDetail: realisasiRows.map(row => ({
-          tahunRealisasi: row.tahunRealisasi,
-          bulanRealisasi: row.bulanRealisasi,
-          realisasi: parseRupiahInput(row.realisasi),
-          nomorInvoice: row.nomorInvoice,
-          tanggalInvoice: row.tanggalInvoice,
-          dokumen: row.dokumen,
-          namaPenyedia: row.namaPenyedia || formData.namaPenyedia
-        })),
-        namaPenyedia: formData.namaPenyedia,
-        kualifikasiPenyedia: formData.kualifikasiPenyedia,
-        nilaiPDN: parseRupiahInput(formData.nilaiPDN),
-        nilaiTKDN: parseRupiahInput(formData.nilaiTKDN),
-        nilaiImpor: parseRupiahInput(formData.nilaiImpor),
-        namaPengadaanRealisasi: formData.namaPengadaanRealisasi,
-        metodePemilihanRealisasi: formData.metodePemilihanRealisasi,
-        progres: formData.progres,
-        sisaPembayaran: parseRupiahInput(formData.sisaPembayaran),
-        keterangan: formData.keterangan,
-        needRealisasi: false,
-        updatedAt: new Date(),
-        updatedBy: user?.email || user?.displayName || ''
-      };
-
-      const komitmenDocs = await getDocs(
-        query(collection(db, 'komitmen'), where('idPaketMonitoring', '==', currentData.idPaketMonitoring))
-      );
-
-      if (!komitmenDocs.empty) {
-        const docId = komitmenDocs.docs[0].id;
-        await updateDoc(doc(db, 'komitmen', docId), updateData);
-        toast.success(`Realisasi untuk "${currentData.namaPaket}" berhasil disimpan`);
-
-        if (currentImportIndex < importedDataNeedRealisasi.length - 1) {
-          const nextIndex = currentImportIndex + 1;
-          setCurrentImportIndex(nextIndex);
-          loadImportedDataToForm(importedDataNeedRealisasi[nextIndex]);
-        } else {
-          toast.success('Semua data import berhasil dilengkapi realisasinya!');
-          setShowImportRealisasiModal(false);
-          setImportedDataNeedRealisasi([]);
-          setCurrentImportIndex(0);
-          fetchKomitmen();
-        }
-      }
-
-    } catch (error) {
-      console.error('Error saving realisasi:', error);
-      toast.error('Gagal menyimpan realisasi');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSkipImportedRealisasi = () => {
-    if (currentImportIndex < importedDataNeedRealisasi.length - 1) {
-      const nextIndex = currentImportIndex + 1;
-      setCurrentImportIndex(nextIndex);
-      loadImportedDataToForm(importedDataNeedRealisasi[nextIndex]);
-      toast.info('Dilewati. Anda bisa mengisi realisasi nanti via Edit.');
-    } else {
-      setShowImportRealisasiModal(false);
-      setImportedDataNeedRealisasi([]);
-      setCurrentImportIndex(0);
-      toast.info('Import selesai. Data yang dilewati bisa diisi realisasi via Edit.');
-      fetchKomitmen();
-    }
-  };
 
   const formatCurrency = (value) => {
     if (!value) return 'Rp 0';
@@ -3697,7 +3535,7 @@ const PICKomitmen = () => {
           )}
           <Alert variant="info">
             <strong>Total data:</strong> {importPreview.length} baris untuk AP <Badge bg="primary">{userAP}</Badge><br />
-            <small className="text-muted">⚠️ Setelah import, Anda akan diminta untuk mengisi Tab Realisasi untuk setiap data</small>
+            <small className="text-muted">ℹ️ Setelah import, data akan masuk ke Tab Komitmen. Field yang belum terisi dapat dilengkapi melalui Edit di Tab Komitmen (opsional).</small>
           </Alert>
           <div className="table-responsive">
             <Table striped bordered hover size="sm">
@@ -3731,250 +3569,6 @@ const PICKomitmen = () => {
         </Modal.Footer>
       </Modal>
 
-      <Modal
-        show={showImportRealisasiModal}
-        onHide={() => { }}
-        size="xl"
-        backdrop="static"
-        keyboard={false}
-      >
-        <Modal.Header>
-          <Modal.Title>
-            Isi Tab Realisasi untuk Data Import ({currentImportIndex + 1}/{importedDataNeedRealisasi.length})
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-          <Alert variant="warning">
-            <strong>⚠️ Wajib Diisi:</strong> Silakan lengkapi Tab Realisasi untuk data yang baru diimport.<br />
-            <small>Data: <strong>{formData.namaPaket}</strong> | AP: <strong>{formData.namaAP}</strong></small>
-          </Alert>
-
-          <h6 className="fw-bold mb-3 mt-3 text-white bg-primary p-2">DATA KOMITMEN (VIEW ONLY)</h6>
-
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Nama Pengadaan (Komitmen)</Form.Label>
-                <Form.Control size="sm" type="text" value={formData.namaPaket} disabled className="bg-light" />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Nilai Anggaran Keseluruhan (Komitmen)</Form.Label>
-                <Form.Control size="sm" type="text" value={formData.komitmenKeseluruhan} disabled className="bg-light" />
-              </Form.Group>
-            </Col>
-          </Row>
-
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Nilai Anggaran Tahun Berjalan (Komitmen)</Form.Label>
-                <Form.Control size="sm" type="text" value={formData.nilaiKomitmen} disabled className="bg-light" />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Metode Pemilihan (Komitmen)</Form.Label>
-                <Form.Control size="sm" type="text" value={formData.usulanMetodePemilihan} disabled className="bg-light" />
-              </Form.Group>
-            </Col>
-          </Row>
-
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Jenis Pengadaan (Komitmen)</Form.Label>
-                <Form.Control size="sm" type="text" value={formData.jenisPengadaan} disabled className="bg-light" />
-              </Form.Group>
-            </Col>
-          </Row>
-          <hr />
-          <h6 className="fw-bold mb-3 text-white bg-success p-2">DATA REALISASI (WAJIB DIISI)</h6>
-          <Row>
-            <Col md={12}>
-              <Form.Group className="mb-3">
-                <Form.Label>Nilai Kontrak Keseluruhan (Rp) <span className="text-danger">*</span></Form.Label>
-                <Form.Control
-                  size="sm"
-                  type="text"
-                  name="nilaiKontrakKeseluruhan"
-                  value={formData.nilaiKontrakKeseluruhan}
-                  onChange={(e) => handleRupiahChange(e, 'nilaiKontrakKeseluruhan')}
-                  placeholder="Masukkan nilai kontrak keseluruhan"
-                  className="bg-success bg-opacity-10"
-                  required
-                />
-              </Form.Group>
-            </Col>
-          </Row>
-          <hr />
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Nama Pengadaan (Realisasi)</Form.Label>
-                <Form.Control
-                  size="sm" type="text" name="namaPengadaanRealisasi"
-                  value={formData.namaPengadaanRealisasi || ''} onChange={handleFormChange}
-                  placeholder="Masukkan nama pengadaan realisasi" className="bg-success bg-opacity-10"
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Metode Pemilihan (Realisasi)</Form.Label>
-                <Form.Select size="sm" name="metodePemilihanRealisasi"
-                  value={formData.metodePemilihanRealisasi || formData.usulanMetodePemilihan}
-                  onChange={handleFormChange} className="bg-success bg-opacity-10">
-                  <option value="Tender/Seleksi Umum">Tender/Seleksi Umum</option>
-                  <option value="Tender/Seleksi Terbatas">Tender/Seleksi Terbatas</option>
-                  <option value="Penunjukan Langsung">Penunjukan Langsung</option>
-                  <option value="Pengadaan Langsung">Pengadaan Langsung</option>
-                  <option value="Penetapan Langsung">Penetapan Langsung</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
-          </Row>
-
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Kualifikasi Penyedia</Form.Label>
-                <Form.Select size="sm" name="kualifikasiPenyedia" value={formData.kualifikasiPenyedia || 'UMKM'}
-                  onChange={handleFormChange} className="bg-success bg-opacity-10">
-                  <option value="UMKM">UMKM</option>
-                  <option value="Non UMKM">Non UMKM</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Nama Penyedia <span className="text-danger">*</span></Form.Label>
-                <Form.Control size="sm" type="text" name="namaPenyedia" value={formData.namaPenyedia || ''}
-                  onChange={handleFormChange} placeholder="Masukkan nama penyedia" className="bg-success bg-opacity-10" />
-              </Form.Group>
-            </Col>
-          </Row>
-          <hr className="my-4" />
-          <h6 className="fw-bold mb-3">Detail Realisasi per Periode <span className="text-danger">*</span></h6>
-          <Row className="mb-2 bg-light py-2 border rounded">
-            <Col md={2}><Form.Label className="fw-bold small mb-0">Nilai Realisasi (Rp)</Form.Label></Col>
-            <Col md={2}><Form.Label className="fw-bold small mb-0">Bulan</Form.Label></Col>
-            <Col md={2}><Form.Label className="fw-bold small mb-0">Nomor Invoice</Form.Label></Col>
-            <Col md={2}><Form.Label className="fw-bold small mb-0">Tanggal Invoice</Form.Label></Col>
-            <Col md={2}><Form.Label className="fw-bold small mb-0">Upload Dokumen</Form.Label></Col>
-            <Col md={2} className="text-center"><Form.Label className="fw-bold small mb-0">Aksi</Form.Label></Col>
-          </Row>
-
-          {realisasiRows.map((row, index) => (
-            <Row key={row.id} className="mb-2 align-items-center border-bottom pb-2">
-              <Col md={2}>
-                <Form.Control type="text" value={row.realisasi || ''}
-                  onChange={(e) => handleRealisasiRupiahChange(index, 'realisasi', e.target.value)}
-                  placeholder="0" className="bg-success bg-opacity-10" size="sm" />
-              </Col>
-              <Col md={2}>
-                <Form.Select value={row.bulanRealisasi || ''}
-                  onChange={(e) => handleRealisasiChange(index, 'bulanRealisasi', e.target.value)}
-                  className="bg-success bg-opacity-10" size="sm">
-                  <option value="">Pilih Bulan</option>
-                  {months.map(m => (<option key={m.value} value={m.value}>{m.label}</option>))}
-                </Form.Select>
-              </Col>
-              <Col md={2}>
-                <Form.Control type="text" value={row.nomorInvoice || ''}
-                  onChange={(e) => handleRealisasiChange(index, 'nomorInvoice', e.target.value)}
-                  placeholder="INV-001" className="bg-success bg-opacity-10" size="sm" />
-              </Col>
-              <Col md={2}>
-                <Form.Control type="date" value={row.tanggalInvoice || ''}
-                  onChange={(e) => handleRealisasiChange(index, 'tanggalInvoice', e.target.value)}
-                  className="bg-success bg-opacity-10" size="sm" />
-              </Col>
-              <Col md={2}>
-                {row.dokumen ? (
-                  <Badge bg="success" className="w-100">File Terupload</Badge>
-                ) : (
-                  <Form.Control type="file"
-                    onChange={(e) => handleRealisasiChange(index, 'dokumen', e.target.files[0])}
-                    accept=".pdf,.jpg,.jpeg,.png" size="sm" />
-                )}
-              </Col>
-              <Col md={2} className="text-center">
-                {index === realisasiRows.length - 1 && (
-                  <Button variant="primary" size="sm" onClick={addRealisasiRow} className="me-1"><FaPlus /></Button>
-                )}
-                {realisasiRows.length > 1 && (
-                  <Button variant="danger" size="sm" onClick={() => removeRealisasiRow(index)}><FaTimes /></Button>
-                )}
-              </Col>
-            </Row>
-          ))}
-          <hr className="my-4" />
-          <Row className="mb-3">
-            <Col md={4}>
-              <Alert variant="warning" className="mb-0">
-                <strong>Progress:</strong> {formData.progres || '0'}%<br />
-                <small className="text-muted">Otomatis dari Total Realisasi / {formData.jenisPaket === 'Multi Year (MY)' ? 'Nilai Kontrak' : 'Komitmen'}</small>
-              </Alert>
-            </Col>
-            <Col md={4}>
-              <Alert variant="info" className="mb-0">
-                <strong>Sisa Pembayaran:</strong> {formData.sisaPembayaran || 'Rp 0'}<br />
-                <small className="text-muted">Otomatis dari {formData.jenisPaket === 'Multi Year (MY)' ? 'Nilai Kontrak' : 'Komitmen'} - Total Realisasi</small>
-              </Alert>
-            </Col>
-            <Col md={4}>
-              <Alert variant="success" className="mb-0">
-                <strong>Total Realisasi:</strong> {formatRupiahInput(
-                  realisasiRows.reduce((sum, row) => sum + parseRupiahInput(row.realisasi), 0).toString()
-                )}<br />
-                <small className="text-muted">SUM dari Detail per Periode</small>
-              </Alert>
-            </Col>
-          </Row>
-          <hr />
-          <h6 className="fw-bold mb-3">Nilai Rupiah (Optional)</h6>
-          <Row>
-            <Col md={4}>
-              <Form.Group className="mb-3">
-                <Form.Label>Nilai PDN (Rp)</Form.Label>
-                <Form.Control type="text" name="nilaiPDN" value={formData.nilaiPDN}
-                  onChange={(e) => handleRupiahChange(e, 'nilaiPDN')} placeholder="0" className="bg-success bg-opacity-10" />
-              </Form.Group>
-            </Col>
-            <Col md={4}>
-              <Form.Group className="mb-3">
-                <Form.Label>Nilai TKDN (Rp)</Form.Label>
-                <Form.Control type="text" name="nilaiTKDN" value={formData.nilaiTKDN}
-                  onChange={(e) => handleRupiahChange(e, 'nilaiTKDN')} placeholder="0" className="bg-success bg-opacity-10" />
-              </Form.Group>
-            </Col>
-            <Col md={4}>
-              <Form.Group className="mb-3">
-                <Form.Label>Nilai Impor (Rp)</Form.Label>
-                <Form.Control type="text" name="nilaiImpor" value={formData.nilaiImpor}
-                  onChange={(e) => handleRupiahChange(e, 'nilaiImpor')} placeholder="0" className="bg-success bg-opacity-10" />
-              </Form.Group>
-            </Col>
-          </Row>
-        </Modal.Body>
-        <Modal.Footer className="d-flex justify-content-between">
-          <div>
-            <small className="text-muted">
-              Data {currentImportIndex + 1} dari {importedDataNeedRealisasi.length}
-            </small>
-          </div>
-          <div className="d-flex gap-2">
-            <Button variant="secondary" onClick={handleSkipImportedRealisasi}>
-              Lewati (Isi Nanti)
-            </Button>
-            <Button variant="primary" onClick={handleSaveImportedRealisasi} disabled={loading}>
-              {loading ? <Spinner animation="border" size="sm" /> : 'Simpan & Lanjut'}
-            </Button>
-          </div>
-        </Modal.Footer>
-      </Modal>
       {/* MODAL REQUEST REVISI */}
       <Modal show={showRevisiModal} onHide={() => setShowRevisiModal(false)} centered>
         <Modal.Header closeButton className="bg-warning">
@@ -4050,6 +3644,12 @@ const PICKomitmen = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+      <ImportWizardModal
+        show={showWizard}
+        items={wizardItems}
+        user={user}
+        onClose={() => { setShowWizard(false); setWizardItems([]); }}
+      />
     </>
   );
 };
