@@ -15,9 +15,10 @@ const MONTHS = [
  * @param {Object} props
  * @param {boolean} props.show
  * @param {Function} props.onHide
- * @param {Object|null} props.komitmen
+ * @param {Object|null} props.selectedKomitmen
  */
-const KomitmenDetailModal = ({ show, onHide, komitmen }) => {
+const KomitmenDetailModal = ({ show, onHide, selectedKomitmen }) => {
+  const komitmen = selectedKomitmen;
   if (!komitmen) return null;
 
   return (

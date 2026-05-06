@@ -5,7 +5,7 @@ import {
 } from 'react-bootstrap';
 import {
   collection, getDocs, query, orderBy, doc, writeBatch, addDoc,
-  updateDoc, where, getDoc, onSnapshot
+  updateDoc, getDoc, onSnapshot,
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -21,18 +21,13 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import { generateIdPaket, parseExcelBoolean, parseExcelDate } from '../../utils/idGenerator';
 import { addNotification } from '../../utils/notificationService';
-import { parseRupiahInput, formatRupiahInput } from '../../utils/rupiahUtils';
+import { parseRupiahInput, formatRupiahInput, formatCurrency } from '../../utils/rupiahUtils';
 import { checkAPSchedule, formatScheduleStatus } from '../../utils/scheduleValidator';
 import ImportWizardModal from '../../components/ImportWizardModal';
 
 import KomitmenFormModal from '../../components/komitmen/KomitmenFormModal';
 import KomitmenDetailModal from '../../components/komitmen/KomitmenDetailModal';
 import useKomitmenForm from '../../hooks/useKomitmenForm';
-
-const formatCurrency = (value) => {
-  if (!value) return 'Rp 0';
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
-};
 
 const PICKomitmen = () => {
   const lastToastTime = useRef(0);
@@ -69,7 +64,6 @@ const PICKomitmen = () => {
 
   // ── Filter state ────────────────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [filterApprovalStatus, setFilterApprovalStatus] = useState('all');
 
   // ── Import state ────────────────────────────────────────────────────────────
@@ -120,7 +114,7 @@ const PICKomitmen = () => {
     return () => { if (unsubscribe) unsubscribe(); };
   }, []);
 
-  useEffect(() => { filterData(); }, [searchTerm, filterStatus, filterApprovalStatus, komitmenList, userAP]);
+  useEffect(() => { filterData(); }, [searchTerm, filterApprovalStatus, komitmenList, userAP]);
 
   // Auto-set namaAP when opening add form
   useEffect(() => {
@@ -215,7 +209,6 @@ const PICKomitmen = () => {
         item.idPaketMonitoring?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    if (filterStatus !== 'all') filtered = filtered.filter(item => item.status === filterStatus);
     if (filterApprovalStatus !== 'all') {
       if (filterApprovalStatus === 'selesai') filtered = filtered.filter(item => item.status === 'selesai');
       else filtered = filtered.filter(item => item.approvalStatus === filterApprovalStatus);

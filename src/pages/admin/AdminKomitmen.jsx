@@ -5,7 +5,7 @@ import {
 } from 'react-bootstrap';
 import {
   collection, getDocs, query, orderBy, deleteDoc, doc,
-  writeBatch, addDoc, updateDoc, where, onSnapshot
+  writeBatch, addDoc, updateDoc, where, onSnapshot,
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -20,16 +20,11 @@ import * as XLSX from 'xlsx';
 import 'react-toastify/dist/ReactToastify.css';
 import { addNotification } from '../../utils/notificationService';
 import { generateIdPaket, parseExcelBoolean, parseExcelDate } from '../../utils/idGenerator';
-import { parseRupiahInput, formatRupiahInput } from '../../utils/rupiahUtils';
+import { parseRupiahInput, formatRupiahInput, formatCurrency } from '../../utils/rupiahUtils';
 import ImportWizardModal from '../../components/ImportWizardModal';
 import KomitmenFormModal from '../../components/komitmen/KomitmenFormModal';
 import KomitmenDetailModal from '../../components/komitmen/KomitmenDetailModal';
 import useKomitmenForm from '../../hooks/useKomitmenForm';
-
-const formatCurrency = (value) => {
-  if (!value) return 'Rp 0';
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
-};
 
 const AdminKomitmen = () => {
   const { user } = useAuth();
@@ -37,7 +32,6 @@ const AdminKomitmen = () => {
   const [komitmenList, setKomitmenList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
   const [masterAPList, setMasterAPList] = useState([]);
-  const [users, setUsers] = useState({});
   const [loading, setLoading] = useState(true);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
@@ -45,7 +39,6 @@ const AdminKomitmen = () => {
   const [selectedKomitmen, setSelectedKomitmen] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [filterApprovalStatus, setFilterApprovalStatus] = useState('all');
   const [importing, setImporting] = useState(false);
   const [importPreview, setImportPreview] = useState([]);
@@ -77,12 +70,11 @@ const AdminKomitmen = () => {
 
   useEffect(() => {
     fetchMasterAP();
-    fetchUsers();
     const unsubscribe = fetchKomitmen();
     return () => { if (unsubscribe) unsubscribe(); };
   }, []);
 
-  useEffect(() => { filterData(); }, [searchTerm, filterStatus, filterApprovalStatus, komitmenList]);
+  useEffect(() => { filterData(); }, [searchTerm, filterApprovalStatus, komitmenList]);
 
   useEffect(() => {
     if (editMode || realisasiRows.some(row => parseRupiahInput(row.realisasi) > 0)) {
@@ -102,15 +94,6 @@ const AdminKomitmen = () => {
       const snapshot = await getDocs(collection(db, 'masterAP'));
       setMasterAPList(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(ap => ap.isActive));
     } catch { toast.error('Gagal memuat Master AP'); }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, 'users'));
-      const map = {};
-      snapshot.docs.forEach(doc => { map[doc.id] = doc.data(); });
-      setUsers(map);
-    } catch { console.error('Error fetching users'); }
   };
 
   const fetchKomitmen = () => {
@@ -134,7 +117,6 @@ const AdminKomitmen = () => {
         item.idPaketMonitoring?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    if (filterStatus !== 'all') filtered = filtered.filter(item => item.status === filterStatus);
     if (filterApprovalStatus !== 'all') {
       if (filterApprovalStatus === 'selesai') {
         filtered = filtered.filter(item => item.status === 'selesai');

@@ -268,59 +268,6 @@ const useKomitmenForm = ({ defaultNamaAP = '' } = {}) => {
     }
   };
 
-  const handleNewRealisasi = (formDataRef) => {
-    setFormData(prev => ({
-      ...prev,
-      namaPenyedia: '',
-      kualifikasiPenyedia: 'UMKM',
-      nilaiPDN: '',
-      nilaiTKDN: '',
-      nilaiImpor: '',
-      namaPengadaanRealisasi: '',
-      metodePemilihanRealisasi: formDataRef.usulanMetodePemilihan,
-      progres: '0',
-      sisaPembayaran: formDataRef.jenisPaket === 'Multi Year (MY)'
-        ? formDataRef.komitmenKeseluruhan
-        : formDataRef.nilaiKomitmen,
-      keterangan: '',
-    }));
-    setRealisasiRows([{ ...EMPTY_REALISASI_ROW(), id: Date.now() }]);
-    setIsAddingNewRealisasi(true);
-    toast.info('Mode: Tambah Realisasi Baru. Field realisasi telah di-reset.');
-  };
-
-  const handleCancelNewRealisasi = (selectedKomitmen) => {
-    setIsAddingNewRealisasi(false);
-
-    if (selectedKomitmen) {
-      if (selectedKomitmen.realisasiDetail && selectedKomitmen.realisasiDetail.length > 0) {
-        setRealisasiRows(selectedKomitmen.realisasiDetail.map(detail => ({
-          id: Date.now() + Math.random(),
-          tahunRealisasi: detail.tahunRealisasi || '',
-          bulanRealisasi: detail.bulanRealisasi || '',
-          realisasi: formatRupiahInput(detail.realisasi?.toString() || ''),
-          nomorInvoice: detail.nomorInvoice || '',
-          tanggalInvoice: detail.tanggalInvoice || '',
-          dokumen: detail.dokumen || null,
-        })));
-      }
-
-      setFormData(prev => ({
-        ...prev,
-        namaPenyedia: selectedKomitmen.namaPenyedia || '',
-        kualifikasiPenyedia: selectedKomitmen.kualifikasiPenyedia || 'UMKM',
-        nilaiPDN: formatRupiahInput(selectedKomitmen.nilaiPDN?.toString() || ''),
-        nilaiTKDN: formatRupiahInput(selectedKomitmen.nilaiTKDN?.toString() || ''),
-        nilaiImpor: formatRupiahInput(selectedKomitmen.nilaiImpor?.toString() || ''),
-        namaPengadaanRealisasi: selectedKomitmen.namaPengadaanRealisasi || '',
-        metodePemilihanRealisasi: selectedKomitmen.metodePemilihanRealisasi || '',
-        progres: selectedKomitmen.progres || '',
-        sisaPembayaran: formatRupiahInput(selectedKomitmen.sisaPembayaran?.toString() || ''),
-        keterangan: selectedKomitmen.keterangan || '',
-      }));
-    }
-    toast.info('Mode: Edit Realisasi Existing');
-  };
 
   return {
     formData,
@@ -343,8 +290,6 @@ const useKomitmenForm = ({ defaultNamaAP = '' } = {}) => {
     addRencanaRow,
     removeRencanaRow,
     loadKomitmenToForm,
-    handleNewRealisasi,
-    handleCancelNewRealisasi,
   };
 };
 
