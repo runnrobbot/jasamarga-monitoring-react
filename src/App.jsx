@@ -24,6 +24,10 @@ import PICDashboard from './pages/pic/PICDashboard';
 import PICKomitmen from './pages/pic/PICKomitmen';
 import PICReports from './pages/pic/PICReports';
 
+// ✅ GM Pages
+import GMDashboard from './pages/gm/GMDashboard';
+import GMKomitmen from './pages/gm/GMKomitmen';
+
 // Context
 import { NotificationProvider } from './contexts/NotificationContext';
 
@@ -53,7 +57,7 @@ function App() {
               <Route 
                 path="/profile" 
                 element={
-                  <ProtectedRoute allowedRoles={['admin', 'pic']}>
+                  <ProtectedRoute allowedRoles={['admin', 'pic', 'gm']}>
                     <ProfilePage />
                   </ProtectedRoute>
                 } 
@@ -62,7 +66,7 @@ function App() {
               <Route 
                 path="/notifications" 
                 element={
-                  <ProtectedRoute allowedRoles={['admin', 'pic']}>
+                  <ProtectedRoute allowedRoles={['admin', 'pic', 'gm']}>
                     <NotificationsPage />
                   </ProtectedRoute>
                 } 
@@ -153,6 +157,28 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['pic']}>
                     <PICReports />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ========================================
+                  GM ROUTES (General Manager)
+                  ======================================== */}
+              
+              <Route
+                path="/gm/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['gm']}>
+                    <GMDashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/gm/komitmen"
+                element={
+                  <ProtectedRoute allowedRoles={['gm']}>
+                    <GMKomitmen />
                   </ProtectedRoute>
                 }
               />

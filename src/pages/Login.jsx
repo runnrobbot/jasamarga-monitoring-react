@@ -24,6 +24,8 @@ const Login = () => {
         navigate('/admin/dashboard', { replace: true });
       } else if (user.role === 'pic') {
         navigate('/pic/dashboard', { replace: true });
+      } else if (user.role === 'gm') {
+        navigate('/gm/dashboard', { replace: true });
       } else {
         // Invalid role
         console.warn('⚠️ Invalid role detected:', user.role);
@@ -61,6 +63,8 @@ const Login = () => {
           navigate('/admin/dashboard', { replace: true });
         } else if (userRole === 'pic') {
           navigate('/pic/dashboard', { replace: true });
+        } else if (userRole === 'gm') {
+          navigate('/gm/dashboard', { replace: true });
         } else {
           console.error('❌ Invalid role after login:', userRole);
           setError('Role tidak valid. Hubungi administrator.');

@@ -224,9 +224,9 @@ const UsersManagement = () => {
       return;
     }
     
-    if (formData.role === 'pic') {
+    if (formData.role === 'pic' || formData.role === 'gm') {
       if (!formData.namaAP || !formData.singkatanAP) {
-        toast.error('PIC harus memiliki Nama AP dan Singkatan AP');
+        toast.error('PIC dan General Manager harus memiliki Nama AP dan Singkatan AP');
         return;
       }
     }
@@ -404,7 +404,7 @@ const UsersManagement = () => {
               firebaseUid,
               'success',
               'Selamat Datang',
-              `Halo ${formData.nama}, akun Anda telah berhasil dibuat. Username: ${formData.username}${formData.role === 'pic' ? `. AP: ${formData.namaAP}` : ''}`,
+              `Halo ${formData.nama}, akun Anda telah berhasil dibuat. Username: ${formData.username}${(formData.role === 'pic' || formData.role === 'gm') ? `. AP: ${formData.namaAP}` : ''}`,
               {
                 action: 'user_registered',
                 role: formData.role,
@@ -519,7 +519,8 @@ const UsersManagement = () => {
   const getRoleBadge = (role) => {
     const config = {
       admin: { bg: 'danger', icon: FaUserShield, label: 'Admin' },
-      pic: { bg: 'primary', icon: FaBuilding, label: 'PIC' }
+      pic: { bg: 'primary', icon: FaBuilding, label: 'PIC' },
+      gm: { bg: 'warning', icon: FaUserShield, label: 'General Manager' }
     };
     const roleConfig = config[role] || { bg: 'secondary', icon: FaUsers, label: role };
     const Icon = roleConfig.icon;
@@ -537,6 +538,7 @@ const UsersManagement = () => {
       total: users.length,
       admin: users.filter(u => u.role === 'admin').length,
       pic: users.filter(u => u.role === 'pic').length,
+      gm: users.filter(u => u.role === 'gm').length,
       active: users.filter(u => u.status === 'active').length,
       inactive: users.filter(u => u.status === 'inactive').length
     };
@@ -909,10 +911,11 @@ const UsersManagement = () => {
                     required
                   >
                     <option value="pic">PIC</option>
+                    <option value="gm">General Manager</option>
                     <option value="admin">Admin</option>
                   </Form.Select>
                   <Form.Text className="text-muted">
-                    Hanya 2 role: Admin & PIC
+                    3 role: Admin, General Manager & PIC
                   </Form.Text>
                 </Form.Group>
               </Col>
@@ -932,11 +935,11 @@ const UsersManagement = () => {
               </Col>
             </Row>
 
-            {formData.role === 'pic' && (
+            {(formData.role === 'pic' || formData.role === 'gm') && (
               <>
                 <Alert variant="info" className="mb-3">
                   <FaBuilding className="me-2" />
-                  <strong>Info PIC:</strong> User dengan role PIC harus memilih AP yang akan dikelola.
+                  <strong>Info {formData.role === 'gm' ? 'General Manager' : 'PIC'}:</strong> User dengan role ini harus memilih AP yang akan dikelola.
                 </Alert>
 
                 <Row>

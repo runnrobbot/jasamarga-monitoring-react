@@ -31,12 +31,12 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const isValidRole = (role) => {
-    const validRoles = ['admin', 'pic'];
+    const validRoles = ['admin', 'pic', 'gm'];
     return validRoles.includes(role);
   };
 
   const isValidPIC = (userData) => {
-    if (userData.role === 'pic') {
+    if (userData.role === 'pic' || userData.role === 'gm') {
       return userData.namaAP && userData.singkatanAP;
     }
     return true;
@@ -147,13 +147,13 @@ export const AuthProvider = ({ children }) => {
 
       if (!isValidRole(userData.role)) {
         throw new Error(
-          `Role '${userData.role}' tidak didukung. Sistem hanya menerima role 'admin' atau 'pic'.`
+          `Role '${userData.role}' tidak didukung. Sistem hanya menerima role 'admin', 'pic', atau 'gm'.`
         );
       }
 
       if (!isValidPIC(userData)) {
         throw new Error(
-          'Akun PIC Anda belum memiliki Nama AP atau Singkatan AP.'
+          'Akun PIC/GM Anda belum memiliki Nama AP atau Singkatan AP.'
         );
       }
 

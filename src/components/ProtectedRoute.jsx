@@ -36,11 +36,10 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // ✅ VALIDATE: Only accept 'admin' or 'pic' roles
-  const validRoles = ['admin', 'pic'];
+  // ✅ VALIDATE: Only accept 'admin', 'pic', or 'gm' roles
+  const validRoles = ['admin', 'pic', 'gm'];
   if (!validRoles.includes(user.role)) {
     console.log('❌ Invalid role detected:', user.role);
-    console.log('⚠️ User has old role (monitoring/user), should re-login');
     return <Navigate to="/unauthorized" replace />;
   }
 
@@ -53,9 +52,9 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // ✅ ADDITIONAL CHECK: PIC must have namaAP
-  if (user.role === 'pic' && !user.namaAP) {
-    console.log('⚠️ PIC user without namaAP, redirecting to unauthorized');
+  // ✅ ADDITIONAL CHECK: PIC and GM must have namaAP
+  if ((user.role === 'pic' || user.role === 'gm') && !user.namaAP) {
+    console.log('⚠️ PIC/GM user without namaAP, redirecting to unauthorized');
     return <Navigate to="/unauthorized" replace />;
   }
 

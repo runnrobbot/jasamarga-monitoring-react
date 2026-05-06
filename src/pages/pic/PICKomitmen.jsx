@@ -4,7 +4,7 @@ import {
   InputGroup, Alert, Row, Col
 } from 'react-bootstrap';
 import {
-  collection, getDocs, query, orderBy, doc, writeBatch, addDoc,
+  collection, getDocs, query, orderBy, doc, addDoc,
   updateDoc, getDoc, onSnapshot,
 } from 'firebase/firestore';
 import { db } from '../../config/firebase';
@@ -16,14 +16,15 @@ import {
   FaDownload, FaFileImport, FaUndo
 } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
-import * as XLSX from 'xlsx';
 import 'react-toastify/dist/ReactToastify.css';
 
-import { generateIdPaket, parseExcelBoolean, parseExcelDate } from '../../utils/idGenerator';
+// idGenerator functions now used inside useImportKomitmen hook
+import { generateIdPaket } from '../../utils/idGenerator';
 import { addNotification } from '../../utils/notificationService';
 import { parseRupiahInput, formatRupiahInput, formatCurrency } from '../../utils/rupiahUtils';
 import { checkAPSchedule, formatScheduleStatus } from '../../utils/scheduleValidator';
 import ImportWizardModal from '../../components/ImportWizardModal';
+import useImportKomitmen from '../../hooks/useImportKomitmen';
 
 import KomitmenFormModal from '../../components/komitmen/KomitmenFormModal';
 import KomitmenDetailModal from '../../components/komitmen/KomitmenDetailModal';
@@ -66,13 +67,19 @@ const PICKomitmen = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterApprovalStatus, setFilterApprovalStatus] = useState('all');
 
-  // ── Import state ────────────────────────────────────────────────────────────
-  const [importing, setImporting] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [importPreview, setImportPreview] = useState([]);
-  const [importErrors, setImportErrors] = useState([]);
-  const [showWizard, setShowWizard] = useState(false);
-  const [wizardItems, setWizardItems] = useState([]);
+  // ── Import state (via hook) ───────────────────────────────────────────────
+  const {
+    importing,
+    showImportModal, setShowImportModal,
+    importPreview,
+    importErrors,
+    showWizard,
+    wizardItems,
+    handleFileUpload,
+    handleImportConfirm,
+    handleWizardCancel,
+    handleWizardClose,
+  } = useImportKomitmen({ user, userAP, masterAPList });
 
   // ── Revisi state ────────────────────────────────────────────────────────────
   const [showRevisiModal, setShowRevisiModal] = useState(false);
@@ -282,7 +289,7 @@ const PICKomitmen = () => {
   // ── Submit ────────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const isRejectedResubmit = editMode && selectedKomitmen?.approvalStatus === 'rejected';
+    const isRejectedResubmit = editMode && (selectedKomitmen?.approvalStatus === 'rejected' || selectedKomitmen?.approvalStatus === 'rejected_gm');
 
     // Live schedule check on new submission
     if (!editMode) {
@@ -313,7 +320,9 @@ const PICKomitmen = () => {
       if (formData.importCheckbox && (!formData.nilaiTahunBerjalanImport || !formData.nilaiKeseluruhanImport)) { toast.error('Nilai Tahun Berjalan Import dan Nilai Keseluruhan Import wajib diisi'); setLoading(false); return; }
 
       const hasRealisasiData = realisasiRows.some(row => row.realisasi && parseRupiahInput(row.realisasi) > 0);
-      if (editMode && !isRejectedResubmit) {
+      // Validasi realisasi hanya berlaku jika komitmen sudah approved oleh admin
+      const isApproved = selectedKomitmen?.approvalStatus === 'approved';
+      if (editMode && !isRejectedResubmit && isApproved) {
         const isImportedKomitmen = selectedKomitmen?.needRealisasi === true;
         if (!hasRealisasiData && !isImportedKomitmen) { toast.error('Minimal 1 baris realisasi wajib diisi di Tab Realisasi'); setLoading(false); return; }
         if (hasRealisasiData) {
@@ -363,10 +372,11 @@ const PICKomitmen = () => {
       if (!editMode) {
         dataToSave.createdAt = new Date();
         dataToSave.createdBy = user?.email || user?.displayName || '';
-        dataToSave.approvalStatus = 'draft';
+        dataToSave.createdByName = user?.nama || user?.username || '';
+        dataToSave.approvalStatus = 'pending_gm';
       }
       if (isRejectedResubmit) {
-        dataToSave.approvalStatus = 'draft';
+        dataToSave.approvalStatus = 'pending_gm';
         dataToSave.approvalNote = '';
         dataToSave.rejectedBy = '';
         dataToSave.rejectedAt = null;
@@ -393,7 +403,7 @@ const PICKomitmen = () => {
             keterangan: formData.keterangan, updatedAt: new Date(), updatedBy: user?.email || '',
             needRealisasi: false, namaPenyedia: formData.namaPenyedia, kualifikasiPenyedia: formData.kualifikasiPenyedia,
             namaPengadaanRealisasi: formData.namaPengadaanRealisasi, metodePemilihanRealisasi: formData.metodePemilihanRealisasi,
-            approvalStatus: 'draft'
+            approvalStatus: 'pending_gm'
           };
           Object.keys(updateData).forEach(key => { if (updateData[key] === undefined) delete updateData[key]; });
           await updateDoc(doc(db, 'komitmen', selectedKomitmen.id), updateData);
@@ -433,80 +443,6 @@ const PICKomitmen = () => {
   };
 
   // ── Import ───────────────────────────────────────────────────────────────────
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const wb = XLSX.read(evt.target.result, { type: 'binary' });
-        const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-        const filteredData = data.filter(item => item['Nama AP'] === userAP);
-        if (filteredData.length === 0) { toast.warning(`Tidak ada data untuk AP: ${userAP}`); return; }
-        const errors = [];
-        filteredData.forEach((item, i) => {
-          const rowNum = i + 2;
-          if (!item['Nama Paket']?.toString().trim()) errors.push(`Baris ${rowNum}: Nama Paket wajib diisi`);
-          const parseCheckbox = (v) => typeof v === 'boolean' ? v : typeof v === 'string' ? ['TRUE','YA','YES','1'].includes(v.trim().toUpperCase()) : v === 1;
-          const count = [parseCheckbox(item['PDN']), parseCheckbox(item['TKDN']), parseCheckbox(item['Import'])].filter(Boolean).length;
-          if (count > 1) errors.push(`Baris ${rowNum}: Hanya boleh memilih 1 checkbox`);
-        });
-        setImportErrors(errors); setImportPreview(filteredData); setShowImportModal(true);
-      } catch { toast.error('Gagal membaca file Excel'); }
-    };
-    reader.readAsBinaryString(file);
-    e.target.value = '';
-  };
-
-  const handleImportConfirm = async () => {
-    try {
-      setImporting(true);
-      const validMetode = ['Tender/Seleksi Umum','Tender/Seleksi Terbatas','Penunjukan Langsung','Pengadaan Langsung','Penetapan Langsung'];
-      const dataReadyToImport = [];
-      for (const item of importPreview) {
-        if (item['Nama AP'] !== userAP) continue;
-        const selectedAP = masterAPList.find(ap => ap.namaAP === userAP);
-        if (!selectedAP) continue;
-        const resolvedJenisPaket = ['Single Year (SY)','Multi Year (MY)'].includes(item['Jenis Paket']) ? item['Jenis Paket'] : 'Single Year (SY)';
-        let idPaket = item['ID Paket Monitoring'];
-        if (!idPaket?.trim()) idPaket = await generateIdPaket(resolvedJenisPaket, selectedAP.singkatanAP);
-        dataReadyToImport.push({
-          idPaketMonitoring: idPaket, jenisPaket: resolvedJenisPaket, idRUP: item['ID RUP'] || '',
-          namaAP: userAP, namaPaket: item['Nama Paket'],
-          jenisAnggaran: ['Opex','Capex'].includes(item['Jenis Anggaran']) ? item['Jenis Anggaran'] : 'Opex',
-          jenisPengadaan: ['Barang','Jasa Konsultansi','Jasa Lainnya','Pekerjaan Konstruksi'].includes(item['Jenis Pengadaan']) ? item['Jenis Pengadaan'] : 'Barang',
-          usulanMetodePemilihan: validMetode.includes(item['Metode Pemilihan']) ? item['Metode Pemilihan'] : 'Tender/Seleksi Umum',
-          statusPadi: item['Status PaDi'] || 'Non PaDi',
-          nilaiKomitmen: parseFloat(item['Nilai Komitmen']) || 0, komitmenKeseluruhan: parseFloat(item['Komitmen Keseluruhan']) || 0,
-          waktuPemanfaatanDari: parseExcelDate(item['Waktu Pemanfaatan Dari']) || '',
-          waktuPemanfaatanSampai: parseExcelDate(item['Waktu Pemanfaatan Sampai']) || '',
-          rencanaDetail: item['Nilai Rencana'] && parseFloat(item['Nilai Rencana']) > 0 ? [{ tahunRencana: item['Tahun Rencana'] || '', nilaiRencana: parseFloat(item['Nilai Rencana']) || 0, bulanRencana: item['Bulan Rencana'] || '', keterangan: item['Keterangan Rencana'] || '' }] : [],
-          pdnCheckbox: parseExcelBoolean(item['PDN']), tkdnCheckbox: parseExcelBoolean(item['TKDN']), importCheckbox: parseExcelBoolean(item['Import']),
-          nilaiTahunBerjalanPDN: parseFloat(item['Nilai Tahun Berjalan PDN']) || 0, nilaiKeseluruhanPDN: parseFloat(item['Nilai Keseluruhan PDN']) || 0,
-          nilaiTahunBerjalanTKDN: parseFloat(item['Nilai Tahun Berjalan TKDN']) || 0, nilaiKeseluruhanTKDN: parseFloat(item['Nilai Keseluruhan TKDN']) || 0,
-          nilaiTahunBerjalanImport: parseFloat(item['Nilai Tahun Berjalan Import']) || 0, nilaiKeseluruhanImport: parseFloat(item['Nilai Keseluruhan Import']) || 0,
-          realisasi: 0, realisasiDetail: [], nilaiKontrakKeseluruhan: 0,
-          namaPenyedia: '', kualifikasiPenyedia: 'UMKM', nilaiPDN: 0, nilaiTKDN: 0, nilaiImpor: 0,
-          progres: '0', sisaPembayaran: parseFloat(item['Nilai Komitmen']) || 0,
-          catatanKomitmen: item['Catatan Komitmen'] || '', keterangan: '',
-          approvalStatus: 'draft', status: 'active', isActive: true,
-          idUser: user?.uid || '', createdAt: new Date(), createdBy: user?.email || 'Import',
-          updatedAt: new Date(), updatedBy: user?.email || 'Import', needRealisasi: true
-        });
-      }
-      const batch = writeBatch(db);
-      const savedIds = [];
-      for (const dataItem of dataReadyToImport) {
-        const docRef = doc(collection(db, 'komitmen'));
-        batch.set(docRef, dataItem); savedIds.push({ id: docRef.id, ...dataItem });
-      }
-      await batch.commit();
-      setShowImportModal(false); setImportPreview([]); setImportErrors([]);
-      try { await addNotification(user?.uid || '', 'success', 'Import Data', `Berhasil import ${dataReadyToImport.length} data komitmen.`, { action: 'import', count: dataReadyToImport.length, namaAP: userAP }); } catch { }
-      setWizardItems(savedIds); setShowWizard(true);
-    } catch { toast.error('Gagal import data'); }
-    finally { setImporting(false); }
-  };
 
   // ── Revisi ────────────────────────────────────────────────────────────────────
   const handleOpenRevisi = (item) => { setSelectedRevisiItem(item); setRevisiNote(''); setShowRevisiModal(true); };
@@ -516,14 +452,20 @@ const PICKomitmen = () => {
     if (!selectedRevisiItem) return;
     setSubmittingRevisi(true);
     try {
-      const isDraft = selectedRevisiItem.approvalStatus === 'draft';
-      const revisiData = isDraft
-        ? { approvalStatus: 'rejected', approvalNote: `[Ditarik PIC] ${revisiNote.trim()}`, rejectedBy: user?.email || '', rejectedAt: new Date(), revisiNote: revisiNote.trim(), revisiRequestedBy: user?.email || '', revisiRequestedAt: new Date(), updatedAt: new Date(), updatedBy: user?.email || '' }
-        : { approvalStatus: 'revision_requested', revisiNote: revisiNote.trim(), revisiRequestedBy: user?.email || '', revisiRequestedAt: new Date(), updatedAt: new Date(), updatedBy: user?.email || '' };
+      const isPendingGM = selectedRevisiItem.approvalStatus === 'pending_gm';
+      const isApproved = selectedRevisiItem.approvalStatus === 'approved';
+      let revisiData;
+      if (isPendingGM) {
+        // Tarik submission yang belum diproses GM
+        revisiData = { approvalStatus: 'rejected_gm', approvalNote: `[Ditarik PIC] ${revisiNote.trim()}`, rejectedBy: user?.email || '', rejectedAt: new Date(), revisiNote: revisiNote.trim(), revisiRequestedBy: user?.email || '', revisiRequestedAt: new Date(), updatedAt: new Date(), updatedBy: user?.email || '' };
+      } else {
+        // Approved — request revisi ke admin
+        revisiData = { approvalStatus: 'revision_requested', revisiNote: revisiNote.trim(), revisiRequestedBy: user?.email || '', revisiRequestedAt: new Date(), updatedAt: new Date(), updatedBy: user?.email || '' };
+      }
       await updateDoc(doc(db, 'komitmen', selectedRevisiItem.id), revisiData);
-      toast.success(isDraft ? 'Submission berhasil ditarik. Silakan perbaiki dan submit ulang!' : 'Request revisi berhasil dikirim ke admin!');
+      toast.success(isPendingGM ? 'Submission berhasil ditarik. Silakan perbaiki dan submit ulang!' : 'Request revisi berhasil dikirim ke admin!');
       setKomitmenList(prev => prev.map(k => k.id === selectedRevisiItem.id ? { ...k, ...revisiData } : k));
-      try { await addNotification(user?.uid || '', 'info', isDraft ? 'Submission Ditarik' : 'Request Revisi Dikirim', isDraft ? `Komitmen "${selectedRevisiItem.namaPaket}" berhasil ditarik.` : `Request revisi untuk komitmen "${selectedRevisiItem.namaPaket}" dikirim ke admin.`, { komitmenId: selectedRevisiItem.id, action: isDraft ? 'draft_recalled' : 'revision_requested', reason: revisiNote.trim() }); } catch { }
+      try { await addNotification(user?.uid || '', 'info', isPendingGM ? 'Submission Ditarik' : 'Request Revisi Dikirim', isPendingGM ? `Komitmen "${selectedRevisiItem.namaPaket}" berhasil ditarik.` : `Request revisi untuk komitmen "${selectedRevisiItem.namaPaket}" dikirim ke admin.`, { komitmenId: selectedRevisiItem.id, action: isPendingGM ? 'draft_recalled' : 'revision_requested', reason: revisiNote.trim() }); } catch { }
       setShowRevisiModal(false); setSelectedRevisiItem(null); setRevisiNote('');
     } catch (error) { toast.error('Gagal mengirim request revisi: ' + error.message); }
     finally { setSubmittingRevisi(false); }
@@ -534,17 +476,20 @@ const PICKomitmen = () => {
     switch (item.approvalStatus) {
       case 'approved': return <Badge bg="success">Approved</Badge>;
       case 'rejected': return <Badge bg="danger">Rejected — Perlu Revisi</Badge>;
+      case 'rejected_gm': return <Badge bg="danger">Ditolak GM — Perlu Revisi</Badge>;
+      case 'pending_gm': return <Badge bg="info" className="text-dark">Menunggu Review GM</Badge>;
+      case 'pending_admin': return <Badge bg="warning" className="text-dark">Menunggu Approval Admin</Badge>;
       case 'revision_requested': return <Badge bg="warning" className="text-dark">Request Revisi</Badge>;
       default: return <Badge bg="secondary">Menunggu Approval</Badge>;
     }
   };
 
   const canEdit = (item) => {
-    return item.approvalStatus === 'rejected' || item.approvalStatus === 'draft' || item.needRealisasi;
+    return item.approvalStatus === 'rejected' || item.approvalStatus === 'rejected_gm' || item.approvalStatus === 'draft' || item.needRealisasi || item.approvalStatus === 'pending_gm';
   };
 
   const canRequestRevisi = (item) => {
-    return (item.approvalStatus === 'draft' || item.approvalStatus === 'approved') && item.status !== 'selesai';
+    return (item.approvalStatus === 'pending_gm' || item.approvalStatus === 'approved') && item.status !== 'selesai';
   };
 
   // ═══════════════════════════════════ RENDER ════════════════════════════════════
@@ -558,10 +503,10 @@ const PICKomitmen = () => {
 
           {/* Schedule Alert */}
           {!scheduleLoading && scheduleStatus && (
-            <Alert variant={scheduleAllowed ? 'info' : 'warning'} className="mb-3">
+            <Alert variant={scheduleAllowed ? scheduleStatus.color : 'warning'} className="mb-3">
               {scheduleAllowed
-                ? <><strong>📅 Periode Input Aktif</strong> — {scheduleStatus}</>
-                : <><strong>⚠️ Periode Input Tidak Aktif</strong> — {scheduleStatus}. Penambahan komitmen baru tidak diizinkan.</>
+                ? <><strong>📅 Periode Input Aktif</strong> — {scheduleStatus.message}</>
+                : <><strong>⚠️ Periode Input Tidak Aktif</strong> — {scheduleStatus.message}. Penambahan komitmen baru tidak diizinkan.</>
               }
             </Alert>
           )}
@@ -596,10 +541,12 @@ const PICKomitmen = () => {
                 <Col md={3}>
                   <Form.Select value={filterApprovalStatus} onChange={(e) => setFilterApprovalStatus(e.target.value)}>
                     <option value="all">Semua Status</option>
-                    <option value="draft">Menunggu Approval</option>
+                    <option value="pending_gm">Menunggu Review GM</option>
+                    <option value="pending_admin">Menunggu Approval Admin</option>
                     <option value="approved">Approved</option>
+                    <option value="rejected_gm">Ditolak GM</option>
+                    <option value="rejected">Rejected Admin</option>
                     <option value="revision_requested">Request Revisi</option>
-                    <option value="rejected">Rejected</option>
                     <option value="selesai">Selesai</option>
                   </Form.Select>
                 </Col>
@@ -647,7 +594,7 @@ const PICKomitmen = () => {
                               )}
                               {canRequestRevisi(item) && (
                                 <Button variant="outline-warning" size="sm" onClick={() => handleOpenRevisi(item)} title="Request Revisi / Tarik Submission">
-                                  <FaUndo className="me-1" />{item.approvalStatus === 'draft' ? 'Tarik' : 'Revisi'}
+                                  <FaUndo className="me-1" />{item.approvalStatus === 'pending_gm' ? 'Tarik' : 'Revisi'}
                                 </Button>
                               )}
                             </div>
@@ -673,7 +620,7 @@ const PICKomitmen = () => {
             <Table striped bordered hover size="sm">
               <thead><tr><th>#</th><th>ID Paket</th><th>Nama Paket</th><th>Komitmen</th><th>Jenis</th></tr></thead>
               <tbody>
-                {importPreview.slice(0, 20).map((item, i) => (<tr key={i}><td>{i + 1}</td><td><small>{item['ID Paket Monitoring'] || 'Auto'}</small></td><td>{item['Nama Paket']}</td><td>{formatCurrency(item['Nilai Komitmen'])}</td><td><small>{item['Jenis Paket']}</small></td></tr>))}
+                {importPreview.slice(0, 20).map((item, i) => { const nk = item['Nilai Komitmen']; const nilaiNum = typeof nk === 'number' ? nk : parseRupiahInput(String(nk || '0')); return (<tr key={i}><td>{i + 1}</td><td><small>{item['ID Paket Monitoring'] || 'Auto'}</small></td><td>{item['Nama Paket']}</td><td>{formatCurrency(nilaiNum)}</td><td><small>{item['Jenis Paket']}</small></td></tr>); })}
                 {importPreview.length > 20 && <tr><td colSpan="5" className="text-center text-muted">... dan {importPreview.length - 20} baris lainnya</td></tr>}
               </tbody>
             </Table>
@@ -692,6 +639,7 @@ const PICKomitmen = () => {
         formData={formData} setFormData={setFormData}
         realisasiRows={realisasiRows} rencanaRows={rencanaRows}
         masterAPList={masterAPList} role="pic"
+        createdByName={user?.nama || user?.username || ''}
         handleSubmit={handleSubmit} handleFormChange={handleFormChange} handleRupiahChange={handleRupiahChange}
         handleRealisasiChange={handleRealisasiChange} handleRealisasiRupiahChange={handleRealisasiRupiahChange}
         addRealisasiRow={addRealisasiRow} removeRealisasiRow={removeRealisasiRow}
@@ -707,7 +655,7 @@ const PICKomitmen = () => {
       {/* ── MODAL REQUEST REVISI ── */}
       <Modal show={showRevisiModal} onHide={() => setShowRevisiModal(false)} centered>
         <Modal.Header closeButton className="bg-warning">
-          <Modal.Title><FaUndo className="me-2" />{selectedRevisiItem?.approvalStatus === 'draft' ? 'Tarik Submission' : 'Request Revisi ke Admin'}</Modal.Title>
+          <Modal.Title><FaUndo className="me-2" />{selectedRevisiItem?.approvalStatus === 'pending_gm' ? 'Tarik Submission' : 'Request Revisi ke Admin'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedRevisiItem && (
@@ -716,8 +664,8 @@ const PICKomitmen = () => {
                 <strong>Paket:</strong> {selectedRevisiItem.namaPaket}<br />
                 <strong>ID:</strong> <span className="font-monospace">{selectedRevisiItem.idPaketMonitoring}</span>
               </Alert>
-              {selectedRevisiItem.approvalStatus === 'draft' ? (
-                <Alert variant="warning"><strong>Catatan:</strong> Submission akan ditarik kembali ke status Draft. Anda dapat mengedit dan submit ulang.</Alert>
+              {selectedRevisiItem.approvalStatus === 'pending_gm' ? (
+                <Alert variant="warning"><strong>Catatan:</strong> Submission akan ditarik kembali. Anda dapat mengedit dan submit ulang ke GM.</Alert>
               ) : (
                 <Alert variant="info"><strong>Catatan:</strong> Request revisi akan dikirim ke admin. Admin akan memutuskan apakah revisi disetujui atau ditolak.</Alert>
               )}
@@ -732,12 +680,18 @@ const PICKomitmen = () => {
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowRevisiModal(false)}>Batal</Button>
           <Button variant="warning" onClick={handleSubmitRevisi} disabled={submittingRevisi || !revisiNote.trim()}>
-            {submittingRevisi ? <Spinner animation="border" size="sm" /> : <><FaUndo className="me-1" />{selectedRevisiItem?.approvalStatus === 'draft' ? 'Tarik Submission' : 'Kirim Request Revisi'}</>}
+            {submittingRevisi ? <Spinner animation="border" size="sm" /> : <><FaUndo className="me-1" />{selectedRevisiItem?.approvalStatus === 'pending_gm' ? 'Tarik Submission' : 'Kirim Request Revisi'}</>}
           </Button>
         </Modal.Footer>
       </Modal>
 
-      <ImportWizardModal show={showWizard} items={wizardItems} user={user} onClose={() => { setShowWizard(false); setWizardItems([]); }} />
+      <ImportWizardModal
+        show={showWizard}
+        items={wizardItems}
+        user={user}
+        onClose={handleWizardClose}
+        onCancel={handleWizardCancel}
+      />
     </>
   );
 };

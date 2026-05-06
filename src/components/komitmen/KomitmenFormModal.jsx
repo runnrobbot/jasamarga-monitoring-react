@@ -41,6 +41,7 @@ const KomitmenFormModal = ({
   rencanaRows,
   masterAPList = [],
   role = 'admin',
+  createdByName = '',
   handleSubmit,
   handleFormChange,
   handleRupiahChange,
@@ -57,8 +58,14 @@ const KomitmenFormModal = ({
   selectedKomitmen,
 }) => {
   const isKomitmenDisabled = false;
+
+  // Realisasi hanya bisa diedit oleh admin (selalu), atau PIC hanya setelah status 'approved'
+  const isApprovedByAdmin = selectedKomitmen?.approvalStatus === 'approved';
   const isRealisasiEditable =
-    !editMode || (editMode && selectedKomitmen?.needRealisasi) || isAddingNewRealisasi;
+    role === 'admin' ||
+    isAddingNewRealisasi ||
+    (editMode && selectedKomitmen?.needRealisasi) ||
+    (role === 'pic' && editMode && isApprovedByAdmin);
 
   const shouldShowPDNFields = () => formData.pdnCheckbox === true;
   const shouldShowTKDNFields = () => formData.tkdnCheckbox === true;
@@ -176,6 +183,24 @@ const KomitmenFormModal = ({
                   </Form.Group>
                 </Col>
               </Row>
+
+              {/* Nama Pembuat — auto-filled dari akun login */}
+              {createdByName && (
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Nama Pembuat</Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={createdByName}
+                        disabled
+                        className="bg-light"
+                      />
+                      <Form.Text className="text-muted">Otomatis dari akun yang login</Form.Text>
+                    </Form.Group>
+                  </Col>
+                </Row>
+              )}
 
               <Row>
                 <Col md={6}>
@@ -519,27 +544,37 @@ const KomitmenFormModal = ({
               {/* ── Informasi Keuangan ── */}
               <hr />
               <h5 className="mb-3">Informasi Keuangan</h5>
-              <Row>
-                {[
-                  { name: 'pdnCheckbox', label: 'PDN' },
-                  { name: 'tkdnCheckbox', label: 'TKDN' },
-                  { name: 'importCheckbox', label: 'Import' },
-                ].map(({ name, label }) => (
-                  <Col md={4} key={name}>
-                    <Form.Group className="mb-3">
-                      <Form.Check
-                        type="checkbox" name={name} label={label}
-                        checked={formData[name]}
-                        onChange={handleFormChange}
-                        disabled={isKomitmenDisabled}
-                      />
-                    </Form.Group>
-                  </Col>
-                ))}
+              <Row className="mb-3">
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label>Jenis Keuangan</Form.Label>
+                    <Form.Select
+                      value={
+                        formData.pdnCheckbox ? 'PDN'
+                          : formData.tkdnCheckbox ? 'TKDN'
+                            : formData.importCheckbox ? 'Import'
+                              : ''
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          pdnCheckbox: val === 'PDN',
+                          tkdnCheckbox: val === 'TKDN',
+                          importCheckbox: val === 'Import',
+                        }));
+                      }}
+                      disabled={isKomitmenDisabled}
+                    >
+                      <option value="">-- Tidak Ada --</option>
+                      <option value="PDN">PDN</option>
+                      <option value="TKDN">TKDN</option>
+                      <option value="Import">Import</option>
+                    </Form.Select>
+                    <Form.Text className="text-muted">Pilih salah satu jenis keuangan yang berlaku</Form.Text>
+                  </Form.Group>
+                </Col>
               </Row>
-              <Alert variant="info" className="mb-3">
-                <small>⚠️ Hanya boleh memilih 1 checkbox (PDN, TKDN, atau Import)</small>
-              </Alert>
 
               {/* PDN Fields */}
               {shouldShowPDNFields() && (
@@ -640,6 +675,18 @@ const KomitmenFormModal = ({
 
             {/* ═══════════════════ TAB REALISASI ═══════════════════ */}
             <Tab eventKey="realisasi" title="Realisasi">
+
+              {/* Alert: Tab Realisasi terkunci sebelum admin approve */}
+              {role === 'pic' && !isApprovedByAdmin && (
+                <Alert variant="warning" className="mt-3 mb-3">
+                  <strong>🔒 Tab Realisasi terkunci</strong><br />
+                  {!editMode
+                    ? 'Data realisasi hanya bisa diisi setelah komitmen disetujui oleh Admin.'
+                    : 'Komitmen ini belum disetujui oleh Admin. Data realisasi baru bisa diisi setelah status menjadi <strong>Approved</strong>.'}
+                  <br /><small className="text-muted">Status saat ini: <strong>{selectedKomitmen?.approvalStatus || 'draft'}</strong></small>
+                </Alert>
+              )}
+
               <h6 className="fw-bold mb-3 mt-3 text-white bg-primary p-2">DATA KOMITMEN</h6>
 
               {/* Summary data komitmen (readonly) */}
@@ -740,7 +787,6 @@ const KomitmenFormModal = ({
                       onChange={(e) => handleRupiahChange(e, 'nilaiKontrakKeseluruhan')}
                       placeholder="Masukkan nilai kontrak keseluruhan"
                       className={isRealisasiEditable ? 'bg-light' : 'bg-success bg-opacity-10'}
-                      required
                     />
                   </Form.Group>
                 </Col>

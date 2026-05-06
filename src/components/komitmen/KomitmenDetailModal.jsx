@@ -16,10 +16,24 @@ const MONTHS = [
  * @param {boolean} props.show
  * @param {Function} props.onHide
  * @param {Object|null} props.selectedKomitmen
+ * @param {string} [props.userRole] - 'admin' | 'pic' | 'gm'
  */
-const KomitmenDetailModal = ({ show, onHide, selectedKomitmen }) => {
-  const komitmen = selectedKomitmen;
+const KomitmenDetailModal = ({ show, onHide, selectedKomitmen, komitmen: komitmenProp, userRole }) => {
+  const komitmen = selectedKomitmen || komitmenProp;
   if (!komitmen) return null;
+
+  const renderApprovalBadge = () => {
+    if (komitmen.status === 'selesai') return <Badge bg="dark">Selesai</Badge>;
+    switch (komitmen.approvalStatus) {
+      case 'pending_gm':    return <Badge bg="warning" className="text-dark">Menunggu Review GM</Badge>;
+      case 'pending_admin': return <Badge bg="info" className="text-dark">Menunggu Approval Admin</Badge>;
+      case 'approved':      return <Badge bg="success">Approved ✓</Badge>;
+      case 'rejected':      return <Badge bg="danger">Rejected Admin</Badge>;
+      case 'rejected_gm':   return <Badge bg="danger">Ditolak GM</Badge>;
+      case 'revision_requested': return <Badge bg="warning" className="text-dark">Request Revisi</Badge>;
+      default:              return <Badge bg="secondary">Pending</Badge>;
+    }
+  };
 
   return (
     <Modal show={show} onHide={onHide} size="xl" centered>
@@ -311,7 +325,80 @@ const KomitmenDetailModal = ({ show, onHide, selectedKomitmen }) => {
           </Card>
         )}
 
-        {/* SECTION 7: KETERANGAN */}
+        {/* SECTION 7: STATUS & RIWAYAT APPROVAL */}
+        <Card className="mb-3 shadow-sm">
+          <Card.Header className="bg-light">
+            <h6 className="mb-0 fw-bold">📋 Status & Riwayat Approval</h6>
+          </Card.Header>
+          <Card.Body>
+            <Row className="mb-2">
+              <Col md={6}>
+                <strong>Status Approval:</strong>
+                <p className="mb-0 mt-1">{renderApprovalBadge()}</p>
+              </Col>
+              <Col md={6}>
+                <strong>Dibuat Oleh:</strong>
+                <p className="mb-0">{komitmen.createdByName || '-'}</p>
+                <small className="text-muted">{komitmen.createdBy}</small>
+              </Col>
+            </Row>
+            {komitmen.gmApprovedBy && (
+              <Row className="mb-2">
+                <Col md={6}>
+                  <strong>Disetujui GM:</strong>
+                  <p className="mb-0">{komitmen.gmApprovedByName || komitmen.gmApprovedBy}</p>
+                  <small className="text-muted">{komitmen.gmApprovedAt?.toDate?.().toLocaleString('id-ID') || ''}</small>
+                </Col>
+                {komitmen.gmNote && (
+                  <Col md={6}>
+                    <strong>Catatan GM:</strong>
+                    <p className="mb-0 text-muted small">{komitmen.gmNote}</p>
+                  </Col>
+                )}
+              </Row>
+            )}
+            {komitmen.gmRejectedBy && (
+              <Row className="mb-2">
+                <Col md={6}>
+                  <strong>Ditolak GM:</strong>
+                  <p className="mb-0">{komitmen.gmRejectedByName || komitmen.gmRejectedBy}</p>
+                  <small className="text-muted">{komitmen.gmRejectedAt?.toDate?.().toLocaleString('id-ID') || ''}</small>
+                </Col>
+                {komitmen.gmNote && (
+                  <Col md={6}>
+                    <strong>Alasan GM:</strong>
+                    <p className="mb-0 text-danger small">{komitmen.gmNote}</p>
+                  </Col>
+                )}
+              </Row>
+            )}
+            {komitmen.approvedBy && (
+              <Row className="mb-2">
+                <Col md={6}>
+                  <strong>Disetujui Admin:</strong>
+                  <p className="mb-0">{komitmen.approvedBy}</p>
+                  <small className="text-muted">{komitmen.approvedAt?.toDate?.().toLocaleString('id-ID') || ''}</small>
+                </Col>
+                {komitmen.approvalNote && (
+                  <Col md={6}>
+                    <strong>Catatan Admin:</strong>
+                    <p className="mb-0 text-muted small">{komitmen.approvalNote}</p>
+                  </Col>
+                )}
+              </Row>
+            )}
+            {(komitmen.approvalStatus === 'rejected' || komitmen.approvalStatus === 'rejected_gm') && komitmen.approvalNote && (
+              <Row>
+                <Col md={12}>
+                  <strong>Alasan Penolakan:</strong>
+                  <p className="mb-0 text-danger">{komitmen.approvalNote}</p>
+                </Col>
+              </Row>
+            )}
+          </Card.Body>
+        </Card>
+
+        {/* SECTION 8: KETERANGAN */}
         {komitmen.keterangan && (
           <Card className="mb-3 shadow-sm">
             <Card.Header className="bg-light">

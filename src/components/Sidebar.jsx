@@ -31,6 +31,10 @@ const Sidebar = () => {
       { path: '/pic/dashboard', icon: dashboardIcon, label: 'Dashboard' },
       { path: '/pic/komitmen', icon: komitmenIcon, label: 'Komitmen' },
       { path: '/pic/reports', icon: laporanIcon, label: 'Laporan' },
+    ],
+    gm: [
+      { path: '/gm/dashboard', icon: dashboardIcon, label: 'Dashboard' },
+      { path: '/gm/komitmen', icon: komitmenIcon, label: 'Review Komitmen' },
     ]
   };
 
@@ -68,8 +72,8 @@ const Sidebar = () => {
           })}
         </Nav>
 
-        {/* ✅ Show AP name for PIC at bottom of sidebar */}
-        {user?.role === 'pic' && user?.namaAP && (
+        {/* ✅ Show AP name for PIC and GM at bottom of sidebar */}
+        {(user?.role === 'pic' || user?.role === 'gm') && user?.namaAP && (
           <div className="sidebar-footer mt-auto p-3 border-top border-secondary">
             <small className="text-muted d-block">Anda mengelola:</small>
             <div className="fw-bold small mt-1 d-flex align-items-center">
