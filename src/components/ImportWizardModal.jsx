@@ -445,7 +445,7 @@ export default function ImportWizardModal({ show, items, user, onClose, onCancel
               <Row className="mb-3">
                 <Col md={6}>
                   <Form.Group>
-                    <Form.Label>Jenis Keuangan</Form.Label>
+                    <Form.Label>Informasi Penggunaan Produk</Form.Label>
                     <Form.Select
                       value={
                         komData.pdnCheckbox ? 'PDN'
@@ -475,7 +475,7 @@ export default function ImportWizardModal({ show, items, user, onClose, onCancel
                       <option value="TKDN">TKDN</option>
                       <option value="Import">Import</option>
                     </Form.Select>
-                    <Form.Text className="text-muted">Pilih salah satu jenis keuangan</Form.Text>
+                    <Form.Text className="text-muted">Pilih salah satu Informasi Penggunaan Produk</Form.Text>
                   </Form.Group>
                 </Col>
               </Row>

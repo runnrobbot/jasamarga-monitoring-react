@@ -543,11 +543,11 @@ const KomitmenFormModal = ({
 
               {/* ── Informasi Keuangan ── */}
               <hr />
-              <h5 className="mb-3">Informasi Keuangan</h5>
+              <h5 className="mb-3">Informasi Penggunaan Produk</h5>
               <Row className="mb-3">
                 <Col md={6}>
                   <Form.Group>
-                    <Form.Label>Jenis Keuangan</Form.Label>
+                    <Form.Label>Penggunaan Produk</Form.Label>
                     <Form.Select
                       value={
                         formData.pdnCheckbox ? 'PDN'
@@ -571,7 +571,7 @@ const KomitmenFormModal = ({
                       <option value="TKDN">TKDN</option>
                       <option value="Import">Import</option>
                     </Form.Select>
-                    <Form.Text className="text-muted">Pilih salah satu jenis keuangan yang berlaku</Form.Text>
+                    <Form.Text className="text-muted">Pilih salah satu penggunaan produk</Form.Text>
                   </Form.Group>
                 </Col>
               </Row>
