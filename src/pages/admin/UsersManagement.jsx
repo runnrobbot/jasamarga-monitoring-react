@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Container, Card, Button, Table, Modal, Form, Badge, Spinner, Alert, Row, Col, InputGroup } from 'react-bootstrap';
 import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../../config/firebase';
-import { 
+import {
   createUserWithEmailAndPassword,
   initializeAuth,
   getAuth
@@ -28,7 +28,7 @@ const UsersManagement = () => {
   const [editMode, setEditMode] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [creatingUser, setCreatingUser] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -39,7 +39,7 @@ const UsersManagement = () => {
     role: 'pic',
     status: 'active'
   });
-  
+
   const [passwordStrength, setPasswordStrength] = useState({
     score: 0,
     message: '',
@@ -55,7 +55,7 @@ const UsersManagement = () => {
     if (searchTerm.trim() === '') {
       setFilteredUsers(users);
     } else {
-      const filtered = users.filter(u => 
+      const filtered = users.filter(u =>
         u.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.nama?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.namaAP?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -83,7 +83,7 @@ const UsersManagement = () => {
     try {
       console.log('Fetching users...');
       const usersSnapshot = await getDocs(collection(db, 'users'));
-      
+
       const usersList = usersSnapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -91,7 +91,7 @@ const UsersManagement = () => {
           ...data
         };
       });
-      
+
       console.log('Fetched users:', usersList);
       setUsers(usersList);
       setFilteredUsers(usersList);
@@ -184,7 +184,7 @@ const UsersManagement = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === 'namaAP') {
       const selectedAP = masterAPList.find(ap => ap.namaAP === value);
       setFormData(prev => ({
@@ -207,12 +207,12 @@ const UsersManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (creatingUser) {
       console.log('Already creating user, please wait...');
       return;
     }
-    
+
     if (!formData.email || !formData.email.trim()) {
       toast.error('Email wajib diisi untuk login ke sistem');
       return;
@@ -223,14 +223,14 @@ const UsersManagement = () => {
       toast.error('Format email tidak valid');
       return;
     }
-    
+
     if (formData.role === 'pic' || formData.role === 'gm') {
       if (!formData.namaAP || !formData.singkatanAP) {
         toast.error('PIC dan General Manager harus memiliki Nama AP dan Singkatan AP');
         return;
       }
     }
-    
+
     try {
       if (editMode) {
         // ============================================
@@ -239,7 +239,7 @@ const UsersManagement = () => {
         const userRef = doc(db, 'users', selectedUser.id);
         const oldStatus = selectedUser.status;
         const oldRole = selectedUser.role;
-        
+
         const updateData = {
           nama: formData.nama,
           namaAP: formData.namaAP || null,
@@ -248,7 +248,7 @@ const UsersManagement = () => {
           status: formData.status,
           updatedAt: new Date()
         };
-        
+
         if (formData.password && formData.password.trim() !== '') {
           const strength = checkPasswordStrength(formData.password);
           if (strength.score < 3) {
@@ -256,7 +256,7 @@ const UsersManagement = () => {
           }
 
           toast.warning('Update password untuk user lain memerlukan Firebase Admin SDK. Password tidak diupdate.');
-          
+
           await addNotification(
             selectedUser.id,
             'warning',
@@ -268,9 +268,9 @@ const UsersManagement = () => {
             }
           );
         }
-        
+
         await updateDoc(userRef, updateData);
-        
+
         if (oldStatus !== formData.status) {
           if (formData.status === 'active') {
             await addNotification(
@@ -298,7 +298,7 @@ const UsersManagement = () => {
             toast.warning(`User ${formData.nama} dinonaktifkan`);
           }
         }
-        
+
         if (oldRole !== formData.role) {
           await addNotification(
             selectedUser.id,
@@ -313,18 +313,18 @@ const UsersManagement = () => {
             }
           );
         }
-        
+
         toast.success('User berhasil diupdate');
         handleCloseModal();
         fetchUsers();
-        
+
       } else {
         // ============================================
         // CREATE NEW USER - USING IFRAME METHOD
         // ============================================
-        
+
         setCreatingUser(true);
-        
+
         const existingUser = users.find(u => u.username === formData.username);
         if (existingUser) {
           toast.error('Username sudah digunakan');
@@ -345,13 +345,13 @@ const UsersManagement = () => {
           setCreatingUser(false);
           return;
         }
-        
+
         toast.info('Membuat user di Firebase Authentication...');
-        
+
         try {
-          
+
           const firebaseApiKey = import.meta.env.VITE_FIREBASE_API_KEY;
-          
+
           // Create user via Firebase Auth REST API
           const signUpResponse = await fetch(
             `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseApiKey}`,
@@ -375,9 +375,9 @@ const UsersManagement = () => {
 
           const signUpData = await signUpResponse.json();
           const firebaseUid = signUpData.localId;
-          
+
           console.log('✅ Firebase Auth user created:', firebaseUid);
-          
+
           // ✅ Create user document in Firestore (admin is still authenticated)
           const userRef = doc(db, 'users', firebaseUid);
           const newUserData = {
@@ -394,10 +394,10 @@ const UsersManagement = () => {
             updatedAt: new Date(),
             createdBy: user?.uid || 'system'
           };
-          
+
           await setDoc(userRef, newUserData);
           console.log('✅ Firestore user document created');
-          
+
           // ✅ Send welcome notification
           try {
             await addNotification(
@@ -423,11 +423,11 @@ const UsersManagement = () => {
             await fetchUsers();
             setCreatingUser(false);
           }, 1000);
-          
+
         } catch (authError) {
           console.error('Error in user creation flow:', authError);
           setCreatingUser(false);
-          
+
           // Handle Firebase REST API errors
           if (authError.message.includes('EMAIL_EXISTS')) {
             toast.error('Email sudah digunakan di Firebase Authentication');
@@ -438,14 +438,14 @@ const UsersManagement = () => {
           } else {
             toast.error(authError.message || 'Gagal membuat user di Firebase Authentication');
           }
-          
+
           throw authError;
         }
       }
     } catch (error) {
       console.error('Error saving user:', error);
       setCreatingUser(false);
-      
+
       if (!error.message || (!error.message.includes('EMAIL_') && !error.message.includes('INVALID_') && !error.message.includes('WEAK_'))) {
         toast.error(error.message || 'Gagal menyimpan data user');
       }
@@ -454,16 +454,16 @@ const UsersManagement = () => {
 
   const handleDelete = async (userId) => {
     const userToDelete = users.find(u => u.id === userId);
-    
+
     if (window.confirm(`Apakah Anda yakin ingin menghapus user "${userToDelete?.nama || userToDelete?.username}"?\n\nCatatan: User akan dihapus dari Firestore. Untuk keamanan penuh, hapus juga dari Firebase Authentication Console.`)) {
       try {
         await deleteDoc(doc(db, 'users', userId));
-        
+
         toast.success('User berhasil dihapus dari Firestore');
         toast.info('Jangan lupa hapus user dari Firebase Authentication Console untuk keamanan penuh', {
           autoClose: 5000
         });
-        
+
         fetchUsers();
       } catch (error) {
         console.error('Error deleting user:', error);
@@ -475,14 +475,14 @@ const UsersManagement = () => {
   const handleToggleStatus = async (userId, currentStatus) => {
     const targetUser = users.find(u => u.id === userId);
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-    
+
     try {
       const userRef = doc(db, 'users', userId);
       await updateDoc(userRef, {
         status: newStatus,
         updatedAt: new Date()
       });
-      
+
       if (newStatus === 'active') {
         await addNotification(
           userId,
@@ -508,7 +508,7 @@ const UsersManagement = () => {
         );
         toast.warning(`User ${targetUser.nama} dinonaktifkan`);
       }
-      
+
       fetchUsers();
     } catch (error) {
       console.error('Error toggling status:', error);
@@ -524,7 +524,7 @@ const UsersManagement = () => {
     };
     const roleConfig = config[role] || { bg: 'secondary', icon: FaUsers, label: role };
     const Icon = roleConfig.icon;
-    
+
     return (
       <Badge bg={roleConfig.bg} className="d-inline-flex align-items-center gap-1">
         <Icon size={12} />
@@ -567,8 +567,8 @@ const UsersManagement = () => {
                       Manajemen pengguna sistem (Admin & PIC)
                     </p>
                   </div>
-                  <Button 
-                    variant="primary" 
+                  <Button
+                    variant="primary"
                     size="lg"
                     onClick={() => handleShowModal()}
                     className="shadow-sm"
@@ -691,7 +691,7 @@ const UsersManagement = () => {
                   <div className="text-center py-5">
                     <FaSearch size={40} className="mb-2 opacity-50 text-muted" />
                     <p className="text-muted">
-                      {searchTerm 
+                      {searchTerm
                         ? `Tidak ada user yang cocok dengan "${searchTerm}"`
                         : 'Belum ada data user. Klik "Tambah User" untuk menambahkan.'}
                     </p>
@@ -743,7 +743,7 @@ const UsersManagement = () => {
                               {getRoleBadge(u.role)}
                             </td>
                             <td className="text-center">
-                              <Badge 
+                              <Badge
                                 bg={u.status === 'active' ? 'success' : 'danger'}
                                 className="status-badge"
                                 style={{ cursor: 'pointer' }}
@@ -914,9 +914,6 @@ const UsersManagement = () => {
                     <option value="gm">General Manager</option>
                     <option value="admin">Admin</option>
                   </Form.Select>
-                  <Form.Text className="text-muted">
-                    3 role: Admin, General Manager & PIC
-                  </Form.Text>
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -996,15 +993,15 @@ const UsersManagement = () => {
             )}
 
             <div className="d-flex gap-2 justify-content-end mt-4">
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 onClick={handleCloseModal}
                 disabled={creatingUser}
               >
                 Batal
               </Button>
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 type="submit"
                 disabled={creatingUser}
               >
