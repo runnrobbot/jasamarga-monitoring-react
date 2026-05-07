@@ -72,6 +72,10 @@ const AdminKomitmen = () => {
   const [approveRevisiNote,      setApproveRevisiNote]      = useState('');
   const [submittingRevisi,       setSubmittingRevisi]       = useState(false);
 
+  // Bulk selection state
+  const [selectedIds,   setSelectedIds]   = useState([]);
+  const [bulkLoading,   setBulkLoading]   = useState(false);
+
   // ── Form hook ───────────────────────────────────────────────────────────────
   const {
     formData, setFormData,
@@ -387,6 +391,69 @@ const AdminKomitmen = () => {
     setSelectedApprovalItem(item); setApprovalAction(action); setApprovalNote(''); setShowApprovalModal(true);
   };
 
+
+  // ── Bulk Selection Handlers ──────────────────────────────────────────
+  const toggleSelectAll = () => {
+    const pendingIds = filteredList
+      .filter(item => item.approvalStatus === 'pending_admin')
+      .map(item => item.id);
+    if (selectedIds.length === pendingIds.length && pendingIds.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(pendingIds);
+    }
+  };
+
+  const toggleSelectOne = (id) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleBulkApprove = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`Approve ${selectedIds.length} komitmen sekaligus?`)) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(selectedIds.map(id => updateDoc(doc(db, 'komitmen', id), {
+        approvalStatus: 'approved',
+        approvedBy: user?.email || 'Admin',
+        approvedAt: new Date(),
+        approvalNote: 'Disetujui (bulk approve)',
+        status: 'active',
+        updatedAt: new Date(),
+        updatedBy: user?.email || ''
+      })));
+      toast.success(`${selectedIds.length} komitmen berhasil diapprove`);
+      setSelectedIds([]);
+    } catch (e) {
+      toast.error('Gagal bulk approve');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkReject = async () => {
+    if (selectedIds.length === 0) return;
+    const note = window.prompt(`Alasan penolakan untuk ${selectedIds.length} komitmen:`);
+    if (!note?.trim()) { toast.error('Alasan wajib diisi'); return; }
+    setBulkLoading(true);
+    try {
+      await Promise.all(selectedIds.map(id => updateDoc(doc(db, 'komitmen', id), {
+        approvalStatus: 'rejected',
+        rejectedBy: user?.email || 'Admin',
+        rejectedAt: new Date(),
+        approvalNote: note.trim(),
+        updatedAt: new Date(),
+        updatedBy: user?.email || ''
+      })));
+      toast.success(`${selectedIds.length} komitmen berhasil ditolak`);
+      setSelectedIds([]);
+    } catch (e) {
+      toast.error('Gagal bulk reject');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   const handleApprove = async () => {
     if (!selectedApprovalItem) return;
     setLoading(true);
@@ -527,6 +594,20 @@ const AdminKomitmen = () => {
                 </Col>
               </Row>
 
+              {/* Bulk Action Bar */}
+              {selectedIds.length > 0 && (
+                <div className="alert alert-primary d-flex align-items-center gap-2 py-2 mb-2">
+                  <strong>{selectedIds.length} dipilih</strong>
+                  <Button size="sm" variant="success" disabled={bulkLoading} onClick={handleBulkApprove}>
+                    {bulkLoading ? <Spinner size="sm" animation="border" /> : '✓ Approve Semua'}
+                  </Button>
+                  <Button size="sm" variant="danger" disabled={bulkLoading} onClick={handleBulkReject}>
+                    {bulkLoading ? <Spinner size="sm" animation="border" /> : '✗ Reject Semua'}
+                  </Button>
+                  <Button size="sm" variant="outline-secondary" onClick={() => setSelectedIds([])}>Batal Pilih</Button>
+                </div>
+              )}
+
               {/* Table */}
               {loading ? (
                 <div className="text-center py-5"><Spinner animation="border" variant="primary" /><p className="mt-2">Loading...</p></div>
@@ -535,6 +616,14 @@ const AdminKomitmen = () => {
                   <Table striped bordered hover>
                     <thead className="table-dark">
                       <tr>
+                        <th style={{width:'40px'}}>
+                          <Form.Check
+                            type="checkbox"
+                            checked={selectedIds.length > 0 && selectedIds.length === filteredList.filter(i => i.approvalStatus === 'pending_admin').length}
+                            onChange={toggleSelectAll}
+                            title="Pilih semua pending admin"
+                          />
+                        </th>
                         <th>#</th><th>ID Paket</th><th>Nama Paket</th><th>Nama AP</th><th>Jenis</th>
                         <th>Komitmen Keseluruhan</th><th>Komitmen Tahun Berjalan</th>
                         <th>Total Rencana</th><th>Nilai Kontrak</th><th>Realisasi</th><th>Status</th><th>Aksi</th>
@@ -544,7 +633,16 @@ const AdminKomitmen = () => {
                       {filteredList.length === 0 ? (
                         <tr><td colSpan="12" className="text-center">Tidak ada data</td></tr>
                       ) : filteredList.map((item, index) => (
-                        <tr key={item.id}>
+                        <tr key={item.id} className={selectedIds.includes(item.id) ? 'table-primary' : ''}>
+                          <td>
+                            {item.approvalStatus === 'pending_admin' && (
+                              <Form.Check
+                                type="checkbox"
+                                checked={selectedIds.includes(item.id)}
+                                onChange={() => toggleSelectOne(item.id)}
+                              />
+                            )}
+                          </td>
                           <td>{index + 1}</td>
                           <td><small className="font-monospace">{item.idPaketMonitoring}</small></td>
                           <td>{item.namaPaket}</td>

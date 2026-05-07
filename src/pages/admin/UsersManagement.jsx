@@ -3,11 +3,8 @@ import { Container, Card, Button, Table, Modal, Form, Badge, Spinner, Alert, Row
 import { collection, getDocs, setDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../../config/firebase';
 import {
-  createUserWithEmailAndPassword,
-  initializeAuth,
-  getAuth
+  sendPasswordResetEmail
 } from 'firebase/auth';
-import { getApp } from 'firebase/app';
 import { useAuth } from '../../contexts/AuthContext';
 import NavigationBar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
@@ -233,9 +230,7 @@ const UsersManagement = () => {
 
     try {
       if (editMode) {
-        // ============================================
-        // EDIT EXISTING USER
-        // ============================================
+
         const userRef = doc(db, 'users', selectedUser.id);
         const oldStatus = selectedUser.status;
         const oldRole = selectedUser.role;
@@ -250,23 +245,19 @@ const UsersManagement = () => {
         };
 
         if (formData.password && formData.password.trim() !== '') {
-          const strength = checkPasswordStrength(formData.password);
-          if (strength.score < 3) {
-            toast.warning('Gunakan password yang lebih kuat untuk keamanan yang lebih baik');
+          try {
+            await sendPasswordResetEmail(auth, selectedUser.email);
+            toast.success(`Email reset password telah dikirim ke ${selectedUser.email}`);
+            await addNotification(
+              selectedUser.id,
+              'info',
+              'Reset Password',
+              'Admin telah mengirimkan email reset password ke akun Anda. Silakan cek email Anda.',
+              { action: 'password_reset_sent', priority: 'high' }
+            );
+          } catch (resetError) {
+            toast.error('Gagal mengirim email reset password. Pastikan email user valid.');
           }
-
-          toast.warning('Update password untuk user lain memerlukan Firebase Admin SDK. Password tidak diupdate.');
-
-          await addNotification(
-            selectedUser.id,
-            'warning',
-            'Password Perlu Diubah',
-            'Admin mencoba mengubah password Anda. Silakan hubungi admin untuk reset password.',
-            {
-              action: 'password_change_attempt',
-              priority: 'high'
-            }
-          );
         }
 
         await updateDoc(userRef, updateData);
@@ -319,10 +310,6 @@ const UsersManagement = () => {
         fetchUsers();
 
       } else {
-        // ============================================
-        // CREATE NEW USER - USING IFRAME METHOD
-        // ============================================
-
         setCreatingUser(true);
 
         const existingUser = users.find(u => u.username === formData.username);
@@ -346,13 +333,10 @@ const UsersManagement = () => {
           return;
         }
 
-        toast.info('Membuat user di Firebase Authentication...');
-
         try {
 
           const firebaseApiKey = import.meta.env.VITE_FIREBASE_API_KEY;
 
-          // Create user via Firebase Auth REST API
           const signUpResponse = await fetch(
             `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseApiKey}`,
             {
@@ -376,9 +360,7 @@ const UsersManagement = () => {
           const signUpData = await signUpResponse.json();
           const firebaseUid = signUpData.localId;
 
-          console.log('✅ Firebase Auth user created:', firebaseUid);
 
-          // ✅ Create user document in Firestore (admin is still authenticated)
           const userRef = doc(db, 'users', firebaseUid);
           const newUserData = {
             uid: firebaseUid,
@@ -396,9 +378,7 @@ const UsersManagement = () => {
           };
 
           await setDoc(userRef, newUserData);
-          console.log('✅ Firestore user document created');
 
-          // ✅ Send welcome notification
           try {
             await addNotification(
               firebaseUid,
@@ -430,13 +410,13 @@ const UsersManagement = () => {
 
           // Handle Firebase REST API errors
           if (authError.message.includes('EMAIL_EXISTS')) {
-            toast.error('Email sudah digunakan di Firebase Authentication');
+            toast.error('Email sudah digunakan oleh akun lain');
           } else if (authError.message.includes('INVALID_EMAIL')) {
             toast.error('Format email tidak valid');
           } else if (authError.message.includes('WEAK_PASSWORD')) {
             toast.error('Password terlalu lemah (minimal 6 karakter)');
           } else {
-            toast.error(authError.message || 'Gagal membuat user di Firebase Authentication');
+            toast.error('Gagal membuat akun user. Silakan coba lagi.');
           }
 
           throw authError;
@@ -455,14 +435,11 @@ const UsersManagement = () => {
   const handleDelete = async (userId) => {
     const userToDelete = users.find(u => u.id === userId);
 
-    if (window.confirm(`Apakah Anda yakin ingin menghapus user "${userToDelete?.nama || userToDelete?.username}"?\n\nCatatan: User akan dihapus dari Firestore. Untuk keamanan penuh, hapus juga dari Firebase Authentication Console.`)) {
+    if (window.confirm(`Apakah Anda yakin ingin menghapus user "${userToDelete?.nama || userToDelete?.username}"?\n\nTindakan ini tidak dapat dibatalkan.`)) {
       try {
         await deleteDoc(doc(db, 'users', userId));
 
-        toast.success('User berhasil dihapus dari Firestore');
-        toast.info('Jangan lupa hapus user dari Firebase Authentication Console untuk keamanan penuh', {
-          autoClose: 5000
-        });
+        toast.success('User berhasil dihapus');
 
         fetchUsers();
       } catch (error) {
@@ -843,8 +820,8 @@ const UsersManagement = () => {
                 <Form.Group className="mb-3">
                   <Form.Label>
                     <FaKey className="me-2" />
-                    Password {editMode && '(Kosongkan jika tidak ingin mengubah)'}
-                    {!editMode && <span className="text-danger"> *</span>}
+                    Password {!editMode && <span className="text-danger"> *</span>}
+                    {editMode && <small className="text-muted fw-normal"> (Isi untuk kirim link reset password ke email user)</small>}
                   </Form.Label>
                   <Form.Control
                     type="password"
@@ -853,7 +830,7 @@ const UsersManagement = () => {
                     onChange={handleInputChange}
                     required={!editMode}
                     minLength={6}
-                    placeholder={editMode ? "Kosongkan jika tidak ingin mengubah" : "Minimal 6 karakter"}
+                    placeholder={editMode ? "Isi untuk mengirim link reset password" : "Minimal 6 karakter"}
                   />
                   {formData.password && (
                     <div className="mt-2">

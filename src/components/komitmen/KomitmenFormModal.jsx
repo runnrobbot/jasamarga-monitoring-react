@@ -63,9 +63,8 @@ const KomitmenFormModal = ({
   const isApprovedByAdmin = selectedKomitmen?.approvalStatus === 'approved';
   const isRealisasiEditable =
     role === 'admin' ||
-    isAddingNewRealisasi ||
-    (editMode && selectedKomitmen?.needRealisasi) ||
-    (role === 'pic' && editMode && isApprovedByAdmin);
+    (role === 'admin' && isAddingNewRealisasi) ||
+    (role === 'pic' && isApprovedByAdmin && (isAddingNewRealisasi || editMode));
 
   const shouldShowPDNFields = () => formData.pdnCheckbox === true;
   const shouldShowTKDNFields = () => formData.tkdnCheckbox === true;
@@ -140,7 +139,7 @@ const KomitmenFormModal = ({
 
       <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
         <Form onSubmit={handleSubmit}>
-          <Tabs defaultActiveKey="komitmen" className="mb-3">
+          <Tabs activeKey={role === 'pic' && !isApprovedByAdmin ? 'komitmen' : undefined} defaultActiveKey="komitmen" className="mb-3" onSelect={(k) => { if (role === 'pic' && !isApprovedByAdmin && k === 'realisasi') return; }}>
 
             {/* ═══════════════════ TAB KOMITMEN ═══════════════════ */}
             <Tab eventKey="komitmen" title="Komitmen Awal / Informasi Dasar">
@@ -674,7 +673,7 @@ const KomitmenFormModal = ({
             </Tab>
 
             {/* ═══════════════════ TAB REALISASI ═══════════════════ */}
-            <Tab eventKey="realisasi" title="Realisasi">
+            <Tab eventKey="realisasi" title={<span>{role === 'pic' && !isApprovedByAdmin ? '🔒 ' : ''}Realisasi</span>} disabled={role === 'pic' && !isApprovedByAdmin}>
 
               {/* Alert: Tab Realisasi terkunci sebelum admin approve */}
               {role === 'pic' && !isApprovedByAdmin && (

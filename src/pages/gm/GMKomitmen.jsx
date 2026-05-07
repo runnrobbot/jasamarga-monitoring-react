@@ -58,6 +58,10 @@ const GMKomitmen = () => {
   const [reviewNote, setReviewNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   // ── Lifecycle ───────────────────────────────────────────────────────────────
   useEffect(() => {
     const q = query(collection(db, 'komitmen'), orderBy('createdAt', 'desc'));
@@ -116,6 +120,52 @@ const GMKomitmen = () => {
     setReviewAction(action);
     setReviewNote('');
     setShowReviewModal(true);
+  };
+
+  // ── Bulk Selection ─────────────────────────────────────
+  const toggleSelectAll = () => {
+    const pendingIds = filteredList.filter(i => i.approvalStatus === 'pending_gm').map(i => i.id);
+    setSelectedIds(prev => prev.length === pendingIds.length && pendingIds.length > 0 ? [] : pendingIds);
+  };
+  const toggleSelectOne = (id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  const handleBulkApprove = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`Setujui ${selectedIds.length} komitmen sekaligus?`)) return;
+    setBulkLoading(true);
+    try {
+      await Promise.all(selectedIds.map(id => updateDoc(doc(db, 'komitmen', id), {
+        approvalStatus: 'pending_admin',
+        gmApprovedBy: user?.email || '',
+        gmApprovedByName: user?.nama || user?.username || '',
+        gmApprovedAt: new Date(),
+        gmNote: 'Disetujui (bulk approve GM)',
+        updatedAt: new Date(), updatedBy: user?.email || ''
+      })));
+      toast.success(`${selectedIds.length} komitmen disetujui dan diteruskan ke Admin`);
+      setSelectedIds([]);
+    } catch { toast.error('Gagal bulk approve'); }
+    finally { setBulkLoading(false); }
+  };
+
+  const handleBulkReject = async () => {
+    if (selectedIds.length === 0) return;
+    const note = window.prompt(`Alasan penolakan untuk ${selectedIds.length} komitmen:`);
+    if (!note?.trim()) { toast.error('Alasan wajib diisi'); return; }
+    setBulkLoading(true);
+    try {
+      await Promise.all(selectedIds.map(id => updateDoc(doc(db, 'komitmen', id), {
+        approvalStatus: 'rejected_gm',
+        gmRejectedBy: user?.email || '',
+        gmRejectedByName: user?.nama || user?.username || '',
+        gmRejectedAt: new Date(),
+        gmNote: note.trim(), approvalNote: note.trim(),
+        updatedAt: new Date(), updatedBy: user?.email || ''
+      })));
+      toast.warning(`${selectedIds.length} komitmen ditolak dan dikembalikan ke PIC`);
+      setSelectedIds([]);
+    } catch { toast.error('Gagal bulk reject'); }
+    finally { setBulkLoading(false); }
   };
 
   const handleSubmitReview = async () => {
@@ -285,8 +335,28 @@ const GMKomitmen = () => {
               ) : (
                 <div className="table-responsive">
                   <Table striped bordered hover className="mb-0">
+                    {selectedIds.length > 0 && (
+                      <div className="alert alert-primary d-flex align-items-center gap-2 py-2 mb-2">
+                        <strong>{selectedIds.length} dipilih</strong>
+                        <Button size="sm" variant="success" disabled={bulkLoading} onClick={handleBulkApprove}>
+                          {bulkLoading ? <Spinner size="sm" animation="border" /> : '✓ Setujui Semua'}
+                        </Button>
+                        <Button size="sm" variant="danger" disabled={bulkLoading} onClick={handleBulkReject}>
+                          {bulkLoading ? <Spinner size="sm" animation="border" /> : '✗ Tolak Semua'}
+                        </Button>
+                        <Button size="sm" variant="outline-secondary" onClick={() => setSelectedIds([])}>Batal Pilih</Button>
+                      </div>
+                    )}
                     <thead className="table-dark">
                       <tr>
+                        <th style={{width:'40px'}}>
+                          <Form.Check
+                            type="checkbox"
+                            checked={selectedIds.length > 0 && selectedIds.length === filteredList.filter(i => i.approvalStatus === 'pending_gm').length}
+                            onChange={toggleSelectAll}
+                            title="Pilih semua pending GM"
+                          />
+                        </th>
                         <th>#</th>
                         <th>ID Paket</th>
                         <th>Nama Paket</th>
@@ -309,7 +379,12 @@ const GMKomitmen = () => {
                         </tr>
                       ) : (
                         filteredList.map((item, index) => (
-                          <tr key={item.id}>
+                          <tr key={item.id} className={selectedIds.includes(item.id) ? 'table-primary' : ''}>
+                            <td>
+                              {item.approvalStatus === 'pending_gm' && (
+                                <Form.Check type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => toggleSelectOne(item.id)} />
+                              )}
+                            </td>
                             <td>{index + 1}</td>
                             <td><small className="font-monospace">{item.idPaketMonitoring}</small></td>
                             <td>
