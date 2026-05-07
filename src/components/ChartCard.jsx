@@ -4,7 +4,6 @@ import { Doughnut, Pie } from 'react-chartjs-2';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-// ✅ UPDATED: ChartCard dengan enhanced options untuk better visualization
 const ChartCard = ({ title, type = 'doughnut', data, subtitle }) => {
   const options = {
     responsive: true,
@@ -54,25 +53,21 @@ const ChartCard = ({ title, type = 'doughnut', data, subtitle }) => {
         }
       }
     },
-    // ✅ Animation
     animation: {
       animateRotate: true,
       animateScale: true,
       duration: 1000,
       easing: 'easeInOutQuart'
     },
-    // ✅ Cutout for doughnut (makes it look more modern)
     cutout: type === 'doughnut' ? '60%' : undefined
   };
 
-  // ✅ Select chart type
   const ChartComponent = type === 'pie' ? Pie : Doughnut;
 
   return (
     <Card className="shadow-sm border-0 h-100 hover-lift">
       <Card.Header className="bg-white border-0 py-3">
         <h6 className="mb-0 fw-bold text-center">{title}</h6>
-        {/* ✅ Optional subtitle */}
         {subtitle && (
           <p className="text-muted text-center mb-0 mt-1" style={{ fontSize: '0.75rem' }}>
             {subtitle}

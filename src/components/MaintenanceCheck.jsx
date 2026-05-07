@@ -3,28 +3,25 @@ import { Container, Card, Alert, Spinner, Badge } from 'react-bootstrap';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { FaCog, FaTools, FaUserShield } from 'react-icons/fa';
+import { FaCog, FaTools } from 'react-icons/fa';
 
 const MaintenanceCheck = ({ children }) => {
-  const { user, loading: authLoading } = useAuth(); // ✅ Get authLoading state
+  const { user, loading: authLoading } = useAuth(); 
   const userRole = user?.role;
   const [loading, setLoading] = useState(true);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
 
   useEffect(() => {
-    // ✅ Only check maintenance if user is authenticated
     if (!authLoading && user) {
       checkMaintenanceMode();
       
-      // Check every 30 seconds
       const interval = setInterval(checkMaintenanceMode, 30000);
       
       return () => clearInterval(interval);
     } else if (!authLoading && !user) {
-      // ✅ If not authenticated, just finish loading
       setLoading(false);
     }
-  }, [user, authLoading]); // ✅ Add dependencies
+  }, [user, authLoading]); 
 
   const checkMaintenanceMode = async () => {
     try {
@@ -34,21 +31,16 @@ const MaintenanceCheck = ({ children }) => {
         setMaintenanceMode(settings.maintenanceMode || false);
         
         if (settings.maintenanceMode) {
-          console.log('⚠️ Maintenance Mode: ACTIVE');
-          console.log('👤 User Role:', userRole);
-          console.log('🔓 Admin Bypass:', userRole === 'admin' ? 'YES' : 'NO');
         }
       }
     } catch (error) {
       console.error('Error checking maintenance mode:', error);
-      // ✅ Don't block app if can't check maintenance
       setMaintenanceMode(false);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Show loading while checking auth OR maintenance
   if (authLoading || loading) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
@@ -57,12 +49,10 @@ const MaintenanceCheck = ({ children }) => {
     );
   }
 
-  // ✅ If not authenticated, show children (login page)
   if (!user) {
     return <>{children}</>;
   }
 
-  // ✅ If maintenance mode is ON and user is NOT admin
   if (maintenanceMode && userRole !== 'admin') {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
@@ -120,7 +110,6 @@ const MaintenanceCheck = ({ children }) => {
   }
 
   if (maintenanceMode && userRole === 'admin') {
-    console.log('✅ Admin bypass: Maintenance mode active but admin can access');
   }
 
   return <>{children}</>;

@@ -1,4 +1,3 @@
-// src/components/NotificationManager.jsx
 import { useState, useEffect } from 'react';
 import { Card, Form, Button, ListGroup, Badge, Alert } from 'react-bootstrap';
 import { FaBell, FaTrash, FaPaperPlane } from 'react-icons/fa';
@@ -9,7 +8,6 @@ import { db } from '../config/firebase';
 import { toast } from 'react-toastify';
 import { formatDate } from '../utils/formatters';
 
-// ✅ UPDATED: NotificationManager untuk 2 roles (admin & pic) - Admin Only Access
 const NotificationManager = () => {
   const { user } = useAuth();
   const [title, setTitle] = useState('');
@@ -19,7 +17,6 @@ const NotificationManager = () => {
   const [loading, setLoading] = useState(false);
   const [announcements, setAnnouncements] = useState([]);
 
-  // ✅ SECURITY: Only admin can access this component
   if (user?.role !== 'admin') {
     return (
       <Alert variant="danger">
@@ -55,7 +52,7 @@ const NotificationManager = () => {
     e.preventDefault();
     
     if (!title.trim() || !message.trim()) {
-      toast.error('❌ Judul dan pesan harus diisi!');
+      toast.error('Judul dan pesan harus diisi!');
       return;
     }
 
@@ -69,16 +66,15 @@ const NotificationManager = () => {
         priority
       );
 
-      toast.success('📢 Pengumuman berhasil dibuat!');
+      toast.success('Pengumuman berhasil dibuat!');
       
-      // Reset form
       setTitle('');
       setMessage('');
       setTargetRoles('all');
       setPriority('medium');
     } catch (error) {
       console.error('Error creating announcement:', error);
-      toast.error('❌ Gagal membuat pengumuman: ' + error.message);
+      toast.error('Gagal membuat pengumuman: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -89,10 +85,10 @@ const NotificationManager = () => {
 
     try {
       await deleteDoc(doc(db, 'notifications', id));
-      toast.success('✅ Pengumuman berhasil dihapus');
+      toast.success('Pengumuman berhasil dihapus');
     } catch (error) {
       console.error('Error deleting announcement:', error);
-      toast.error('❌ Gagal menghapus pengumuman');
+      toast.error('Gagal menghapus pengumuman');
     }
   };
 
@@ -105,7 +101,6 @@ const NotificationManager = () => {
     return badges[priority] || badges.medium;
   };
 
-  // ✅ UPDATED: Only 2 roles (admin & pic)
   const getTargetRolesBadge = (roles) => {
     const badges = {
       all: <Badge bg="primary">Semua User</Badge>,

@@ -64,7 +64,6 @@
   gap: 2rem; /* Space between logos */
 }
 
-/* Individual Logo Wrapper */
 .logo-wrapper {
   display: flex;
   flex-direction: column;
@@ -72,10 +71,8 @@
   gap: 0.5rem;
 }
 
-/* ✅ FIXED: Brand Logo - Show original colors */
 .brand-logo {
   height: 80px;
-  /* filter: brightness(0) invert(1); ← REMOVED! */
   padding: 10px;
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
@@ -86,7 +83,6 @@
   transform: scale(1.05);
 }
 
-/* ✅ NEW: Secondary Logo (for dual logo) */
 .secondary-logo {
   height: 80px;
   padding: 10px;
@@ -99,14 +95,12 @@
   transform: scale(1.05);
 }
 
-/* ✅ NEW: Logo Divider (optional line between logos) */
 .logo-divider {
   width: 2px;
   height: 60px;
   background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.5), transparent);
 }
 
-/* ✅ NEW: Logo Labels (optional text under logos) */
 .logo-label {
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.8);
@@ -594,7 +588,6 @@
   }
 }
 
-/* ✅ NEW: Mobile responsive for dual logos */
 @media (max-width: 576px) {
   .logo-container {
     flex-direction: column;

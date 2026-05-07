@@ -13,7 +13,6 @@ import Sidebar from '../components/Sidebar';
 import { formatDate } from '../utils/formatters';
 import { addNotification } from '../utils/notificationService';
 
-// ✅ UPDATED: ProfilePage untuk 2 roles (admin & pic)
 const ProfilePage = () => {
   const { user, logout } = useAuth();
   const { notifications } = useNotifications();
@@ -325,7 +324,6 @@ const ProfilePage = () => {
     }
   };
 
-  // ✅ UPDATED: Role badge for admin & pic
   const getRoleBadge = (role) => {
     const badges = {
       admin: <Badge bg="danger">Admin</Badge>,
@@ -412,7 +410,6 @@ const ProfilePage = () => {
                     <div className="d-flex gap-2 flex-wrap">
                       {getRoleBadge(userData.role)}
                       {getStatusBadge(userData.status)}
-                      {/* ✅ Show AP badges for PIC */}
                       {userData.role === 'pic' && (
                         <>
                           {userData.namaAP && (
@@ -488,7 +485,6 @@ const ProfilePage = () => {
                         </Form.Text>
                       </Form.Group>
 
-                      {/* ✅ AP Fields (ONLY for PIC) */}
                       {userData.role === 'pic' && (
                         <>
                           <Alert variant="info" className="mb-3">
@@ -606,12 +602,12 @@ const ProfilePage = () => {
                         />
                         {confirmPassword && newPassword !== confirmPassword && (
                           <Form.Text className="text-danger">
-                            ❌ Password tidak cocok!
+                            Password tidak cocok!
                           </Form.Text>
                         )}
                         {confirmPassword && newPassword === confirmPassword && (
                           <Form.Text className="text-success">
-                            ✅ Password cocok!
+                            Password cocok!
                           </Form.Text>
                         )}
                       </Form.Group>

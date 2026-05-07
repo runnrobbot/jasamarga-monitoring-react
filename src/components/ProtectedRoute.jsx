@@ -5,16 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { user, loading } = useAuth();
 
-  console.log('🔒 ProtectedRoute Check:', {
-    user: user ? { 
-      username: user.username, 
-      role: user.role,
-      namaAP: user.namaAP || 'N/A'
-    } : null,
-    loading,
-    allowedRoles,
-    path: window.location.pathname
-  });
 
   // Show loading state while checking authentication
   if (loading) {
@@ -30,36 +20,24 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     );
   }
 
-  // If not logged in, redirect to login
   if (!user) {
-    console.log('❌ Not logged in, redirecting to /login');
     return <Navigate to="/login" replace />;
   }
 
-  // ✅ VALIDATE: Only accept 'admin', 'pic', or 'gm' roles
   const validRoles = ['admin', 'pic', 'gm'];
   if (!validRoles.includes(user.role)) {
-    console.log('❌ Invalid role detected:', user.role);
     return <Navigate to="/unauthorized" replace />;
   }
 
   // If user doesn't have the required role, redirect to unauthorized
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    console.log('❌ Access denied, role not allowed:', { 
-      userRole: user.role, 
-      allowedRoles 
-    });
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // ✅ ADDITIONAL CHECK: PIC and GM must have namaAP
   if ((user.role === 'pic' || user.role === 'gm') && !user.namaAP) {
-    console.log('⚠️ PIC/GM user without namaAP, redirecting to unauthorized');
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // User is authenticated and has the required role
-  console.log('✅ Access granted');
   return children;
 };
 

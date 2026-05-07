@@ -35,9 +35,7 @@ export const addNotification = async (userId, type, title, message, relatedData 
   }
 };
 
-/**
- * ✅ Create announcement for admin & pic roles
- */
+
 export const createAnnouncement = async (createdBy, title, message, targetRoles = 'all', priority = 'medium') => {
   try {
     const announcementData = {
@@ -64,9 +62,6 @@ export const createAnnouncement = async (createdBy, title, message, targetRoles 
   }
 };
 
-/**
- * ✅ Mark notification as read
- */
 export const markAsRead = async (notificationId) => {
   try {
     const notificationRef = doc(db, 'notifications', notificationId);
@@ -79,9 +74,6 @@ export const markAsRead = async (notificationId) => {
   }
 };
 
-/**
- * ✅ Delete a notification
- */
 export const deleteNotification = async (notificationId) => {
   try {
     await deleteDoc(doc(db, 'notifications', notificationId));
@@ -90,9 +82,6 @@ export const deleteNotification = async (notificationId) => {
   }
 };
 
-/**
- * ✅ Mark all notifications as read for a user
- */
 export const markAllAsRead = async (userId) => {
   try {
     const userDoc = await getDoc(doc(db, 'users', userId));
@@ -155,9 +144,6 @@ export const markAllAsRead = async (userId) => {
   }
 };
 
-/**
- * ✅ Delete all read notifications for a user
- */
 export const deleteAllRead = async (userId) => {
   try {
     const userDoc = await getDoc(doc(db, 'users', userId));
@@ -211,17 +197,12 @@ export const deleteAllRead = async (userId) => {
     );
 
     await Promise.all(deletePromises);
-    console.log(`🗑️ Deleted ${deletePromises.length} read notifications`);
     return deletePromises.length;
   } catch (error) {
-    console.error('❌ Error deleting read notifications:', error);
     throw error;
   }
 };
 
-/**
- * ✅ Notification templates for admin & pic
- */
 export const NotificationTemplates = {
   KOMITMEN_CREATED: (namaPaket) => ({
     type: 'success',

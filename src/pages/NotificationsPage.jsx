@@ -96,7 +96,6 @@ const NotificationsPage = () => {
     return badges[priority] || badges.medium;
   };
 
-  // ✅ UPDATED: Only 2 roles (admin & pic)
   const getTargetRolesBadge = (roles) => {
     const badges = {
       all: <Badge bg="primary">Semua User</Badge>,
@@ -113,7 +112,6 @@ const NotificationsPage = () => {
         <Sidebar />
         <div className="flex-grow-1" style={{ marginLeft: '250px', marginTop: '56px' }}>
           <Container className="mt-4">
-            {/* ✅ Header with User Info */}
             <div className="d-flex justify-content-between align-items-center mb-4">
               <div>
                 <h2>
@@ -122,11 +120,9 @@ const NotificationsPage = () => {
                 </h2>
                 <p className="text-muted mb-0">
                   {unreadCount} notifikasi belum dibaca dari total {notifications.length}
-                  {/* ✅ Show role badge */}
                   <Badge bg={user?.role === 'admin' ? 'danger' : 'success'} className="ms-2">
                     {user?.role === 'admin' ? 'Admin' : 'PIC'}
                   </Badge>
-                  {/* ✅ Show AP for PIC */}
                   {user?.role === 'pic' && user?.namaAP && (
                     <Badge bg="primary" className="ms-2">{user.namaAP}</Badge>
                   )}
@@ -218,7 +214,6 @@ const NotificationsPage = () => {
                                 </h6>
                                 <div className="d-flex gap-2 align-items-center flex-wrap">
                                   {getPriorityBadge(notif.priority)}
-                                  {/* ✅ Show target roles badge for announcements */}
                                   {notif.type === 'announcement' && notif.targetRoles && getTargetRolesBadge(notif.targetRoles)}
                                 </div>
                               </div>

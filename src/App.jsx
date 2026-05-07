@@ -19,12 +19,10 @@ import AdminReports from './pages/admin/AdminReports';
 import AdminSettings from './pages/admin/AdminSettings';
 import MasterAP from './pages/admin/MasterAP';
 
-// ✅ PIC Pages (Separate Structure)
 import PICDashboard from './pages/pic/PICDashboard';
 import PICKomitmen from './pages/pic/PICKomitmen';
 import PICReports from './pages/pic/PICReports';
 
-// ✅ GM Pages
 import GMDashboard from './pages/gm/GMDashboard';
 import GMKomitmen from './pages/gm/GMKomitmen';
 
@@ -35,7 +33,6 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
-// ✅ UPDATED: App.jsx dengan struktur terpisah untuk Admin & PIC
 function App() {
   return (
     <AuthProvider>

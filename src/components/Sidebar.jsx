@@ -72,7 +72,6 @@ const Sidebar = () => {
           })}
         </Nav>
 
-        {/* ✅ Show AP name for PIC and GM at bottom of sidebar */}
         {(user?.role === 'pic' || user?.role === 'gm') && user?.namaAP && (
           <div className="sidebar-footer mt-auto p-3 border-top border-secondary">
             <small className="text-muted d-block">Anda mengelola:</small>

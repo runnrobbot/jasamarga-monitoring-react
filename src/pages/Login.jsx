@@ -5,7 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { FaUser, FaLock, FaRoad, FaShieldAlt } from 'react-icons/fa';
 import './Login.css';
 
-// ✅ UPDATED: Login with role-based redirection (preserving Jasa Marga design)
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -15,10 +14,8 @@ const Login = () => {
   const { user, login, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  // ✅ REDIRECT LOGIC: Based on user role
   useEffect(() => {
     if (user && !authLoading) {
-      console.log('🔄 User logged in, redirecting based on role:', user.role);
       
       if (user.role === 'admin') {
         navigate('/admin/dashboard', { replace: true });
@@ -27,8 +24,6 @@ const Login = () => {
       } else if (user.role === 'gm') {
         navigate('/gm/dashboard', { replace: true });
       } else {
-        // Invalid role
-        console.warn('⚠️ Invalid role detected:', user.role);
         navigate('/unauthorized', { replace: true });
       }
     }
@@ -45,20 +40,14 @@ const Login = () => {
     try {
       setError('');
       setLoading(true);
-      
-      console.log('🔐 Attempting login for:', username);
-      
-      // ✅ Login with username
+            
       const result = await login(username, password);
       
       if (result.success) {
         const userRole = result.user.role;
-        console.log('✅ Login successful, user role:', userRole);
         
-        // ✅ Small delay to let onAuthStateChanged update state
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // ✅ ROLE-BASED REDIRECT
         if (userRole === 'admin') {
           navigate('/admin/dashboard', { replace: true });
         } else if (userRole === 'pic') {
@@ -66,7 +55,6 @@ const Login = () => {
         } else if (userRole === 'gm') {
           navigate('/gm/dashboard', { replace: true });
         } else {
-          console.error('❌ Invalid role after login:', userRole);
           setError('Role tidak valid. Hubungi administrator.');
           
           setTimeout(() => {
@@ -80,13 +68,11 @@ const Login = () => {
       } else {
         setError('Login gagal. Periksa username dan password Anda.');
       }
-      console.error('❌ Login error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Show loading spinner during auth check
   if (authLoading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #003d7a 0%, #005a9c 50%, #0078d4 100%)' }}>

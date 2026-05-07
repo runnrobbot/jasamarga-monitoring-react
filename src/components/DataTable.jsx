@@ -235,7 +235,7 @@ const DataTable = ({
 
                 <td>
                   {item.completionStatus === 'selesai' ? (
-                    <Badge bg="success">✅ Selesai</Badge>
+                    <Badge bg="success">Selesai</Badge>
                   ) : item.approvalStatus === 'rejected' ? (
                     <Badge bg="danger">Ditolak</Badge>
                   ) : item.approvalStatus === 'approved' ? (

@@ -274,7 +274,6 @@ const Navbar = () => {
               </NavDropdown.Item>
             </NavDropdown>
 
-            {/* ✅ UPDATED: ROLE BADGE - Admin & PIC only */}
             {userRole && (
               <Badge bg={getRoleBadgeColor(userRole)} className="ms-2 role-badge">
                 {getRoleLabel(userRole)}

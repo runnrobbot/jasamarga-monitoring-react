@@ -13,7 +13,6 @@ export const useNotifications = () => {
   return context;
 };
 
-// ✅ UPDATED: NotificationProvider untuk 2 roles (admin & pic) dengan uid field support
 export const NotificationProvider = ({ children }) => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
@@ -43,7 +42,7 @@ export const NotificationProvider = ({ children }) => {
   let isMounted = true;
   const allNotifications = new Map();
   let listenersReady = 0;
-  const totalListeners = 5; // ✅ NOW 5 queries
+  const totalListeners = 5; // 
   const unsubscribers = [];
 
   const updateNotifications = () => {
@@ -72,33 +71,28 @@ export const NotificationProvider = ({ children }) => {
     });
   };
 
-  // ✅ Query 1: Personal notifications (uid field)
   const query1 = query(
     collection(db, 'notifications'),
     where('uid', '==', user.uid)
   );
 
-  // ✅ Query 2: Personal notifications (userId field - legacy)
   const query2 = query(
     collection(db, 'notifications'),
     where('userId', '==', user.uid)
   );
 
-  // ✅ Query 3: System announcements for all users
   const query3 = query(
     collection(db, 'notifications'),
     where('uid', '==', 'system'),
     where('targetRoles', '==', 'all')
   );
 
-  // ✅ Query 4: System announcements for user's role
   const query4 = query(
     collection(db, 'notifications'),
     where('uid', '==', 'system'),
     where('targetRoles', '==', user.role)
   );
 
-  // ✅ Query 5: Legacy announcements (targetRoles without uid='system')
   const query5 = query(
     collection(db, 'notifications'),
     where('targetRoles', '==', user.role)
@@ -124,7 +118,6 @@ export const NotificationProvider = ({ children }) => {
       },
       (error) => {
         if (!isMounted) return;
-        console.error(`❌ Query ${index + 1} error:`, error);
         listenersReady++;
         updateNotifications();
       }
