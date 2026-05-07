@@ -39,8 +39,7 @@ if (import.meta.env.PROD) {
 export { analytics };
 
 if (import.meta.env.DEV) {
-  console.log('Firebase initialized in DEVELOPMENT mode');
-  console.log('Project ID:', firebaseConfig.projectId);
+
 }
 
 export default app;

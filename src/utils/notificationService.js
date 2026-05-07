@@ -126,7 +126,6 @@ export const markAllAsRead = async (userId) => {
     });
 
     if (docIds.size === 0) {
-      console.log('No unread notifications to mark');
       return 0;
     }
 
@@ -188,7 +187,6 @@ export const deleteAllRead = async (userId) => {
     });
 
     if (docIds.size === 0) {
-      console.log('No read notifications to delete');
       return 0;
     }
 

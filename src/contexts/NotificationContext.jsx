@@ -27,7 +27,6 @@ export const NotificationProvider = ({ children }) => {
     return;
   }
 
-  console.log('📬 Setting up notification listeners for:', user.username, 'role:', user.role);
   setLoading(true);
 
   const validRoles = ['admin', 'pic'];
@@ -63,12 +62,6 @@ export const NotificationProvider = ({ children }) => {
     if (listenersReady === totalListeners) {
       setLoading(false);
     }
-
-    console.log('📬 Notifications updated:', {
-      total: notifArray.length,
-      unread: notifArray.filter(n => !n.read).length,
-      role: user.role
-    });
   };
 
   const query1 = query(
@@ -104,7 +97,6 @@ export const NotificationProvider = ({ children }) => {
       q,
       (snapshot) => {
         if (!isMounted) return;
-        console.log(`📥 Query ${index + 1} received:`, snapshot.size);
         
         snapshot.forEach((doc) => {
           allNotifications.set(doc.id, {
@@ -127,7 +119,6 @@ export const NotificationProvider = ({ children }) => {
   });
 
   return () => {
-    console.log('🔌 Cleaning up notification listeners');
     isMounted = false;
     unsubscribers.forEach(unsub => {
       if (typeof unsub === 'function') {

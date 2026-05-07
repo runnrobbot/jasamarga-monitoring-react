@@ -27,7 +27,6 @@ export const generateIdPaket = async (jenisPaket, singkatanAP) => {
     const snapshot = await getDocs(q);
 
     if (!snapshot.empty) {
-      console.log(`ID ${idPaket} sudah ada, regenerate...`);
       return generateIdPaket(jenisPaket, singkatanAP);
     }
 

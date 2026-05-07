@@ -364,12 +364,6 @@ const KomitmenDetailModal = ({ show, onHide, selectedKomitmen, komitmen: komitme
                   <p className="mb-0">{komitmen.gmRejectedByName || komitmen.gmRejectedBy}</p>
                   <small className="text-muted">{komitmen.gmRejectedAt?.toDate?.().toLocaleString('id-ID') || ''}</small>
                 </Col>
-                {komitmen.gmNote && (
-                  <Col md={6}>
-                    <strong>Alasan GM:</strong>
-                    <p className="mb-0 text-danger small">{komitmen.gmNote}</p>
-                  </Col>
-                )}
               </Row>
             )}
             {komitmen.approvedBy && (
