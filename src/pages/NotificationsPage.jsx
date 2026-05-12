@@ -110,7 +110,7 @@ const NotificationsPage = () => {
       <Navbar />
       <div className="d-flex">
         <Sidebar />
-        <div className="flex-grow-1" style={{ marginLeft: '250px', marginTop: '56px' }}>
+        <div className="flex-grow-1 responsive-shift">
           <Container className="mt-4">
             <div className="d-flex justify-content-between align-items-center mb-4">
               <div>

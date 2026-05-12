@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { Navbar as BootstrapNavbar, Container, Nav, NavDropdown, Badge, ListGroup, Button } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaBell, FaUser, FaSignOutAlt, FaCheck, FaTrash } from 'react-icons/fa';
+import { FaBell, FaUser, FaSignOutAlt, FaCheck, FaTrash, FaBars } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useSidebar } from '../contexts/SidebarContext';
 import { markAsRead, deleteNotification } from '../utils/notificationService';
 import { formatDate } from '../utils/formatters';
 import { toast } from 'react-toastify';
@@ -13,6 +15,17 @@ const Navbar = () => {
   const userRole = user?.role;
   const { notifications, unreadCount } = useNotifications();
   const navigate = useNavigate();
+  const { isOpen, toggle } = useSidebar();
+
+  // Body scroll lock saat sidebar terbuka di mobile
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('sidebar-open');
+    } else {
+      document.body.classList.remove('sidebar-open');
+    }
+    return () => document.body.classList.remove('sidebar-open');
+  }, [isOpen]);
 
   const getNavbarTitle = () => {
     if (!user) return 'Jasa Marga - AP Monitoring';
@@ -108,8 +121,21 @@ const Navbar = () => {
   };
 
   return (
-    <BootstrapNavbar style={{ backgroundColor: '#003d7a' }} variant="dark" expand="lg" fixed="top" className="shadow-sm navbar-custom">
+    <BootstrapNavbar style={{ backgroundColor: '#003d7a' }} variant="dark" fixed="top" className="shadow-sm navbar-custom">
       <Container fluid>
+        {/* Hamburger — hanya tampil di mobile/tablet (≤991px) */}
+        {user && (
+          <button
+            type="button"
+            className="sidebar-toggle-btn"
+            onClick={toggle}
+            aria-label="Toggle menu"
+            aria-expanded={isOpen}
+          >
+            <FaBars />
+          </button>
+        )}
+
         <BootstrapNavbar.Brand 
           as={Link} 
           to={user?.role === 'admin' ? '/admin/dashboard' : '/pic/dashboard'} 
@@ -124,11 +150,9 @@ const Navbar = () => {
           />
           <span className="navbar-title">{getNavbarTitle()}</span>
         </BootstrapNavbar.Brand>
-        
-        <BootstrapNavbar.Toggle aria-controls="basic-navbar-nav" />
-        
-        <BootstrapNavbar.Collapse id="basic-navbar-nav">
-          <Nav className="ms-auto align-items-lg-center">
+
+        <div className="ms-auto d-flex align-items-center">
+          <Nav className="align-items-center flex-row navbar-actions">
             {/* NOTIFICATION BELL DROPDOWN */}
             <NavDropdown
               title={
@@ -280,7 +304,7 @@ const Navbar = () => {
               </Badge>
             )}
           </Nav>
-        </BootstrapNavbar.Collapse>
+        </div>
       </Container>
     </BootstrapNavbar>
   );

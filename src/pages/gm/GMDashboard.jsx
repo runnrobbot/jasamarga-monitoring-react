@@ -54,7 +54,7 @@ const GMDashboard = () => {
       <NavigationBar />
       <div className="d-flex">
         <Sidebar />
-        <Container fluid style={{ marginLeft: '250px', paddingTop: '100px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '1.5rem', minHeight: '100vh' }}>
+        <Container fluid className="responsive-shift" style={{ paddingTop: '100px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '1.5rem', minHeight: '100vh' }}>
           
           {/* Header */}
           <Card className="shadow-sm mb-4 border-0" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}>

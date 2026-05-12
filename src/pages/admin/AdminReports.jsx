@@ -434,7 +434,8 @@ const AdminReports = () => {
         <Sidebar />
         <Container
           fluid
-          style={{ marginLeft: '250px', paddingTop: '100px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '1.5rem', minHeight: '100vh' }}
+          className="responsive-shift"
+          style={{ paddingTop: '100px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '1.5rem', minHeight: '100vh' }}
         >
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>

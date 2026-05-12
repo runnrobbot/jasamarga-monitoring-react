@@ -28,17 +28,20 @@ import GMKomitmen from './pages/gm/GMKomitmen';
 
 // Context
 import { NotificationProvider } from './contexts/NotificationContext';
+import { SidebarProvider } from './contexts/SidebarContext';
 
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
+import './styles/responsive.css';
 
 function App() {
   return (
     <AuthProvider>
       <NotificationProvider>
-        <MaintenanceCheck>
-          <Router>
+        <SidebarProvider>
+          <MaintenanceCheck>
+            <Router>
             <Routes>
               {/* ========================================
                   PUBLIC ROUTES
@@ -195,7 +198,8 @@ function App() {
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </Router>
-        </MaintenanceCheck>
+          </MaintenanceCheck>
+        </SidebarProvider>
       </NotificationProvider>
     </AuthProvider>
   );

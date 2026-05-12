@@ -247,7 +247,7 @@ const GMKomitmen = () => {
       <NavigationBar />
       <div className="d-flex">
         <Sidebar />
-        <Container fluid style={{ marginLeft: '250px', paddingTop: '100px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '1.5rem', minHeight: '100vh' }}>
+        <Container fluid className="responsive-shift" style={{ paddingTop: '100px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '1.5rem', minHeight: '100vh' }}>
           <ToastContainer position="top-right" autoClose={3000} />
 
           {/* ── Header ── */}

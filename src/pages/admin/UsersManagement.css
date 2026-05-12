@@ -4,6 +4,7 @@
   margin-top: 56px;
   min-height: calc(100vh - 56px);
   background-color: #f8f9fa;
+  min-width: 0;
 }
 
 /* Statistics Cards */

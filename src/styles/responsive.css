@@ -1,0 +1,317 @@
+/* ==========================================================================
+   GLOBAL RESPONSIVE LAYOUT
+   ==========================================================================
+   File ini menyatukan layout responsive untuk semua halaman.
+   Strategi: layout offset (margin-left untuk sidebar) di-handle di sini,
+   bukan inline style di tiap halaman. Halaman lama yang masih pakai
+   inline marginLeft tetap di-override oleh aturan di bawah.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. LAYOUT KONTEN UTAMA (di sebelah kanan sidebar)
+   -------------------------------------------------------------------------- */
+
+/* Class baru — pakai ini di halaman baru */
+.app-content {
+  flex: 1 1 auto;
+  margin-left: 250px;
+  margin-top: 56px;
+  padding: 1.25rem;
+  min-height: calc(100vh - 56px);
+  background-color: #f8f9fa;
+  min-width: 0;            /* penting biar nggak overflow karena child */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Class lama "main-content" — disamakan supaya konsisten responsive */
+.main-content {
+  flex: 1 1 auto;
+  margin-left: 250px;
+  margin-top: 56px;
+  padding: 1.25rem;
+  min-height: calc(100vh - 56px);
+  background-color: #f8f9fa;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Layar besar */
+@media (min-width: 1920px) {
+  .app-content,
+  .main-content {
+    margin-left: 280px;
+  }
+}
+
+/* Laptop kecil */
+@media (min-width: 992px) and (max-width: 1199px) {
+  .app-content,
+  .main-content {
+    margin-left: 220px;
+  }
+}
+
+/* Tablet dan mobile: sidebar collapse → konten full width */
+@media (max-width: 991px) {
+  .app-content,
+  .main-content {
+    margin-left: 0 !important;
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .app-content,
+  .main-content {
+    padding: 0.75rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. OVERRIDE INLINE STYLE LAMA
+   -------------------------------------------------------------------------- */
+/* Beberapa halaman lama pakai inline style `marginLeft: 250px`.
+   Kita target khusus elemen di dalam .d-flex yang punya inline margin-left
+   numerik supaya hilang di mobile. Karena CSS tidak bisa nge-match inline
+   style, kita pakai class helper di bawah dan ganti di .jsx-nya juga.
+   Untuk yang belum sempat diganti, ada utility ".responsive-shift". */
+.responsive-shift {
+  flex: 1 1 auto;
+  margin-left: 250px;
+  margin-top: 56px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1920px) {
+  .responsive-shift { margin-left: 280px; }
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+  .responsive-shift { margin-left: 220px; }
+}
+
+@media (max-width: 991px) {
+  .responsive-shift {
+    margin-left: 0 !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. SIDEBAR TOGGLE (HAMBURGER) — terlihat di mobile/tablet saja
+   -------------------------------------------------------------------------- */
+.sidebar-toggle-btn {
+  display: none;
+  background: transparent;
+  border: 0;
+  color: #fff;
+  padding: 0.25rem 0.6rem;
+  font-size: 1.25rem;
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
+.sidebar-toggle-btn:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+}
+
+@media (max-width: 991px) {
+  .sidebar-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* Body lock saat sidebar terbuka di mobile (cegah scroll bawah ikut gerak) */
+body.sidebar-open {
+  overflow: hidden;
+}
+
+@media (min-width: 992px) {
+  body.sidebar-open {
+    overflow: auto;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. NAVBAR — judul disingkat di layar kecil
+   -------------------------------------------------------------------------- */
+@media (max-width: 575px) {
+  .navbar-title {
+    font-size: 0.85rem;
+    max-width: 60vw;
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+  }
+
+  .navbar-brand-custom img {
+    height: 24px !important;
+  }
+}
+
+@media (max-width: 991px) {
+  .user-dropdown .user-email {
+    max-width: 140px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  /* Nav action di navbar (bell + user dropdown) selalu horizontal,
+     tidak ikut Bootstrap collapse */
+  .navbar-actions {
+    flex-direction: row !important;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+  }
+
+  .navbar-actions .dropdown-menu {
+    position: absolute !important;
+  }
+
+  /* Role badge boleh disembunyikan di layar sangat kecil supaya
+     bell + user email muat */
+}
+
+@media (max-width: 480px) {
+  .role-badge {
+    display: none !important;
+  }
+
+  .user-dropdown .user-email {
+    max-width: 90px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5. TABLE — semua tabel responsive (scroll horizontal di mobile)
+   -------------------------------------------------------------------------- */
+.table-responsive {
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+}
+
+/* Saran kecil: di mobile, font tabel sedikit lebih kecil supaya muat */
+@media (max-width: 767px) {
+  .table-responsive .table,
+  .table-responsive table {
+    font-size: 0.8rem;
+  }
+
+  .table-responsive th,
+  .table-responsive td {
+    white-space: nowrap;          /* paksa scroll, jangan wrap */
+    padding: 0.5rem 0.6rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .table-responsive .table,
+  .table-responsive table {
+    font-size: 0.75rem;
+  }
+}
+
+/* Bungkus otomatis: setiap <table> yang kebetulan nggak punya .table-responsive
+   pun jadi bisa di-scroll horizontal di parent yang overflow */
+.table {
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   6. CARD & GRID — kasih breathing room di mobile
+   -------------------------------------------------------------------------- */
+@media (max-width: 575px) {
+  .card-body {
+    padding: 1rem;
+  }
+
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+  h3 { font-size: 1.1rem; }
+  h4 { font-size: 1rem; }
+  h5 { font-size: 0.95rem; }
+
+  .btn {
+    font-size: 0.875rem;
+  }
+
+  .btn-lg {
+    font-size: 0.95rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* Toolbar buttons (Tambah / Export / Import / Template) yang banyak di
+   AdminKomitmen / PICKomitmen — biar wrap rapi di mobile */
+@media (max-width: 575px) {
+  .toolbar-wrap,
+  .d-flex.gap-2.flex-wrap {
+    flex-wrap: wrap !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   7. MODAL — agar pas di mobile
+   -------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+
+  .modal-xl, .modal-lg {
+    max-width: 100% !important;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .modal-body .row > [class^="col"] {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   8. FORM CONTROLS — supaya readable di mobile
+   -------------------------------------------------------------------------- */
+@media (max-width: 575px) {
+  .form-label {
+    font-size: 0.875rem;
+  }
+
+  .form-control,
+  .form-select {
+    font-size: 0.9rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   9. STATCARD GRID — biar otomatis 1 kolom di mobile, 2 di tablet
+   -------------------------------------------------------------------------- */
+@media (max-width: 575px) {
+  .stat-card {
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   10. PRINT — sembunyikan tombol toggle saat print
+   -------------------------------------------------------------------------- */
+@media print {
+  .sidebar-toggle-btn,
+  .sidebar-overlay {
+    display: none !important;
+  }
+}

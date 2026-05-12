@@ -402,7 +402,7 @@ const PICReports = () => {
         <ToastContainer position="top-right" autoClose={3000} />
         <div className="d-flex">
           <Sidebar />
-          <Container fluid style={{ marginLeft: '250px', paddingTop: '100px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '1.5rem', minHeight: '100vh' }}>
+          <Container fluid className="responsive-shift" style={{ paddingTop: '100px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '1.5rem', minHeight: '100vh' }}>
             <Alert variant="danger">
               <h4>⚠️ Akses Ditolak</h4>
               <p>Akun PIC Anda belum memiliki Nama AP yang valid. Silakan hubungi administrator.</p>
@@ -421,7 +421,7 @@ const PICReports = () => {
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="d-flex">
         <Sidebar />
-        <Container fluid style={{ marginLeft: '250px', paddingTop: '100px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '1.5rem', minHeight: '100vh' }}>
+        <Container fluid className="responsive-shift" style={{ paddingTop: '100px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '1.5rem', minHeight: '100vh' }}>
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
               <h2 className="fw-bold mb-1">Laporan — {userAP}</h2>

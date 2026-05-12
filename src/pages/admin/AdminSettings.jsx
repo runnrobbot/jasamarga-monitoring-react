@@ -724,8 +724,8 @@ const AdminSettings = () => {
           <Sidebar />
           <Container 
             fluid 
+            className="responsive-shift"
             style={{ 
-              marginLeft: '250px',
               paddingTop: '100px',
               minHeight: '100vh'
             }}
@@ -748,8 +748,8 @@ const AdminSettings = () => {
         <Sidebar />
         <Container 
           fluid 
+          className="responsive-shift"
           style={{ 
-            marginLeft: '250px',
             paddingTop: '100px',
             paddingLeft: '1.5rem',
             paddingRight: '1.5rem',
