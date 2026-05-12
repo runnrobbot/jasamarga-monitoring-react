@@ -57,10 +57,12 @@ const KomitmenFormModal = ({
   handleCancelNewRealisasi,
   selectedKomitmen,
 }) => {
-  const isKomitmenDisabled = false;
-
   // Realisasi hanya bisa diedit oleh admin (selalu), atau PIC hanya setelah status 'approved'
   const isApprovedByAdmin = selectedKomitmen?.approvalStatus === 'approved';
+  // Tab Komitmen di-lock untuk PIC ketika komitmen sudah di-approve admin
+  // (tab Realisasi sudah terbuka, sehingga data komitmen tidak boleh diubah lagi).
+  // Untuk status rejected/draft/pending, PIC tetap bisa edit komitmen seperti biasa.
+  const isKomitmenDisabled = role === 'pic' && isApprovedByAdmin;
   const isRealisasiEditable =
     role === 'admin' ||
     (role === 'admin' && isAddingNewRealisasi) ||
