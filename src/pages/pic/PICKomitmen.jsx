@@ -499,7 +499,7 @@ const PICKomitmen = () => {
       <NavigationBar />
       <div className="d-flex">
         <Sidebar />
-        <Container fluid className="responsive-shift" style= padding: '2rem', marginTop: '70px' >
+        <Container fluid className="responsive-shift" style={ { padding: '2rem', marginTop: '70px' } }>
           <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick />
 
           {/* Schedule Alert */}
@@ -528,7 +528,7 @@ const PICKomitmen = () => {
                   <Button variant="primary" size="sm" onClick={handleExport}><FaFileExport className="me-1" /> Export Excel</Button>
                   <Button variant="info" size="sm" onClick={() => { const link = document.createElement('a'); link.href = '/templates/Template_Import_Komitmen_Awal.xlsx'; link.download = 'Template_Import_Komitmen_Awal.xlsx'; document.body.appendChild(link); link.click(); document.body.removeChild(link); toast.success('Template berhasil didownload!'); }}><FaDownload className="me-1" /> Download Template</Button>
                   <Button variant="warning" size="sm" onClick={() => fileInputRef.current?.click()} disabled={!scheduleAllowed}><FaFileImport className="me-1" /> Import Excel</Button>
-                  <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} style= display: 'none'  />
+                  <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} style={ { display: 'none' } } />
                 </div>
               </div>
 
@@ -614,7 +614,7 @@ const PICKomitmen = () => {
       {/* MODAL IMPORT */}
       <Modal show={showImportModal} onHide={() => setShowImportModal(false)} size="xl" centered>
         <Modal.Header closeButton><Modal.Title>Preview Import Data - AP: <Badge bg="primary">{userAP}</Badge></Modal.Title></Modal.Header>
-        <Modal.Body style= maxHeight: '70vh', overflowY: 'auto' >
+        <Modal.Body style={ { maxHeight: '70vh', overflowY: 'auto' } }>
           {importErrors.length > 0 && (<Alert variant="danger"><strong>Ditemukan {importErrors.length} error:</strong><ul className="mb-0 mt-2">{importErrors.slice(0, 10).map((e, i) => <li key={i}>{e}</li>)}</ul></Alert>)}
           <Alert variant="info"><strong>Total data:</strong> {importPreview.length} baris untuk AP <Badge bg="primary">{userAP}</Badge></Alert>
           <div className="table-responsive">
