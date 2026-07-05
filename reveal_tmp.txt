@@ -1,0 +1,3 @@
+A_modalbody:  maxHeight: '70vh', overflowY: 'auto' 
+B_popperprops:  strategy: 'fixed' 
+C_alertstyle:  borderLeft: '4px solid #28a745' 
