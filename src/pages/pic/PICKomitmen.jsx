@@ -44,30 +44,30 @@ const PICKomitmen = () => {
   const fileInputRef = useRef(null);
   const { user } = useAuth();
 
-  // ── Data state ──────────────────────────────────────────────────────────────
+  // ── Data state ──────────────────────────────────────────────────────
   const [komitmenList, setKomitmenList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
   const [masterAPList, setMasterAPList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userAP, setUserAP] = useState('');
 
-  // ── Schedule state ──────────────────────────────────────────────────────────
+  // ── Schedule state ───────────────────────────────────────────────
   const [scheduleLoading, setScheduleLoading] = useState(true);
   const [scheduleInfo, setScheduleInfo] = useState(null);
   const [scheduleStatus, setScheduleStatus] = useState(null);
   const [scheduleAllowed, setScheduleAllowed] = useState(false);
 
-  // ── UI state ────────────────────────────────────────────────────────────────
+  // ── UI state ──────────────────────────────────────────────────────
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
   const [selectedKomitmen, setSelectedKomitmen] = useState(null);
   const [editMode, setEditMode] = useState(false);
 
-  // ── Filter state ────────────────────────────────────────────────────────────
+  // ── Filter state ────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState('');
   const [filterApprovalStatus, setFilterApprovalStatus] = useState('all');
 
-  // ── Import state (via hook) ───────────────────────────────────────────────
+  // ── Import state (via hook) ──────────────────────────
   const {
     importing,
     showImportModal, setShowImportModal,
@@ -81,13 +81,13 @@ const PICKomitmen = () => {
     handleWizardClose,
   } = useImportKomitmen({ user, userAP, masterAPList });
 
-  // ── Revisi state ────────────────────────────────────────────────────────────
+  // ── Revisi state ────────────────────────────────────────────────
   const [showRevisiModal, setShowRevisiModal] = useState(false);
   const [selectedRevisiItem, setSelectedRevisiItem] = useState(null);
   const [revisiNote, setRevisiNote] = useState('');
   const [submittingRevisi, setSubmittingRevisi] = useState(false);
 
-  // ── Form hook ───────────────────────────────────────────────────────────────
+  // ── Form hook ───────────────────────────────────────────────────
   const {
     formData, setFormData,
     realisasiRows, setRealisasiRows,
@@ -102,7 +102,7 @@ const PICKomitmen = () => {
     loadKomitmenToForm,
   } = useKomitmenForm({ defaultNamaAP: userAP });
 
-  // ── Lifecycle ────────────────────────────────────────────────────────────────
+  // ── Lifecycle ───────────────────────────────────────────────────
   useEffect(() => {
     const fetchUserAP = async () => {
       try {
@@ -189,7 +189,7 @@ const PICKomitmen = () => {
     loadScheduleInfo();
   }, [userAP, masterAPList]);
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────────
+  // ── Fetch ────────────────────────────────────────────────────────
   const fetchMasterAP = async () => {
     try {
       const snapshot = await getDocs(collection(db, 'masterAP'));
@@ -223,7 +223,7 @@ const PICKomitmen = () => {
     setFilteredList(filtered);
   };
 
-  // ── Modal handlers ───────────────────────────────────────────────────────────
+  // ── Modal handlers ────────────────────────────────────────────────
   const handleCloseFormModal = () => {
     setShowFormModal(false);
     setEditMode(false);
@@ -286,7 +286,7 @@ const PICKomitmen = () => {
     toast.info('Mode: Edit Realisasi Existing');
   };
 
-  // ── Submit ────────────────────────────────────────────────────────────────────
+  // ── Submit ───────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     const isRejectedResubmit = editMode && (selectedKomitmen?.approvalStatus === 'rejected' || selectedKomitmen?.approvalStatus === 'rejected_gm');
@@ -296,7 +296,7 @@ const PICKomitmen = () => {
       try {
         const apData = masterAPList.find(ap => ap.namaAP === userAP);
         const liveCheck = await checkAPSchedule(apData?.id, userAP);
-        if (!liveCheck.allowed) { toast.error('⚠️ Schedule berubah! ' + liveCheck.message); setScheduleAllowed(false); return; }
+        if (!liveCheck.allowed) { toast.error('Schedule berubah! ' + liveCheck.message); setScheduleAllowed(false); return; }
       } catch (error) { console.error('Live schedule check failed:', error); }
     }
 
@@ -428,7 +428,7 @@ const PICKomitmen = () => {
     finally { setLoading(false); }
   };
 
-  // ── Export ────────────────────────────────────────────────────────────────────
+  // ── Export ───────────────────────────────────────────────────────
   const handleExport = () => {
     const dataToExport = filteredList.map(item => ({
       'ID Paket': item.idPaketMonitoring, 'Jenis Paket': item.jenisPaket, 'Nama AP': item.namaAP,
@@ -442,9 +442,9 @@ const PICKomitmen = () => {
     toast.success('Data berhasil diexport');
   };
 
-  // ── Import ───────────────────────────────────────────────────────────────────
+  // ── Import ───────────────────────────────────────────────────────
 
-  // ── Revisi ────────────────────────────────────────────────────────────────────
+  // ── Revisi ───────────────────────────────────────────────────────
   const handleOpenRevisi = (item) => { setSelectedRevisiItem(item); setRevisiNote(''); setShowRevisiModal(true); };
 
   const handleSubmitRevisi = async () => {
@@ -485,28 +485,31 @@ const PICKomitmen = () => {
   };
 
   const canEdit = (item) => {
-    return item.approvalStatus === 'rejected' || item.approvalStatus === 'rejected_gm' || item.approvalStatus === 'draft' || item.needRealisasi || item.approvalStatus === 'pending_gm';
+    if (item.status === 'selesai') return false;
+    // PIC boleh mengedit setelah komitmen di-approve admin (untuk mengisi/melengkapi Realisasi).
+    // Tab Komitmen tetap terkunci di dalam form; hanya tab Realisasi yang bisa diedit.
+    return item.approvalStatus === 'approved' || item.approvalStatus === 'rejected' || item.approvalStatus === 'rejected_gm' || item.approvalStatus === 'draft' || item.needRealisasi || item.approvalStatus === 'pending_gm';
   };
 
   const canRequestRevisi = (item) => {
     return (item.approvalStatus === 'pending_gm' || item.approvalStatus === 'approved') && item.status !== 'selesai';
   };
 
-  // ═══════════════════════════════════ RENDER ════════════════════════════════════
+  // ════════════════════════════════════ RENDER ═══════════════════════════════════
   return (
     <>
       <NavigationBar />
       <div className="d-flex">
         <Sidebar />
-        <Container fluid className="responsive-shift" style={{ paddingTop: '100px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '1.5rem', minHeight: '100vh' }}>
+        <Container fluid className="responsive-shift" style= padding: '2rem', marginTop: '70px' >
           <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick />
 
           {/* Schedule Alert */}
           {!scheduleLoading && scheduleStatus && (
             <Alert variant={scheduleAllowed ? scheduleStatus.color : 'warning'} className="mb-3">
               {scheduleAllowed
-                ? <><strong>📅 Periode Input Aktif</strong> — {scheduleStatus.message}</>
-                : <><strong>⚠️ Periode Input Tidak Aktif</strong> — {scheduleStatus.message}. Penambahan komitmen baru tidak diizinkan.</>
+                ? <><strong>Periode Input Aktif</strong> — {scheduleStatus.message}</>
+                : <><strong>Periode Input Tidak Aktif</strong> — {scheduleStatus.message}. Penambahan komitmen baru tidak diizinkan.</>
               }
             </Alert>
           )}
@@ -527,7 +530,7 @@ const PICKomitmen = () => {
                   <Button variant="primary" size="sm" onClick={handleExport}><FaFileExport className="me-1" /> Export Excel</Button>
                   <Button variant="info" size="sm" onClick={() => { const link = document.createElement('a'); link.href = '/templates/Template_Import_Komitmen_Awal.xlsx'; link.download = 'Template_Import_Komitmen_Awal.xlsx'; document.body.appendChild(link); link.click(); document.body.removeChild(link); toast.success('Template berhasil didownload!'); }}><FaDownload className="me-1" /> Download Template</Button>
                   <Button variant="warning" size="sm" onClick={() => fileInputRef.current?.click()} disabled={!scheduleAllowed}><FaFileImport className="me-1" /> Import Excel</Button>
-                  <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} style={{ display: 'none' }} />
+                  <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileUpload} style= display: 'none'  />
                 </div>
               </div>
 
@@ -613,7 +616,7 @@ const PICKomitmen = () => {
       {/* ── MODAL IMPORT ── */}
       <Modal show={showImportModal} onHide={() => setShowImportModal(false)} size="xl" centered>
         <Modal.Header closeButton><Modal.Title>Preview Import Data - AP: <Badge bg="primary">{userAP}</Badge></Modal.Title></Modal.Header>
-        <Modal.Body style={{ maxHeight: '500px', overflowY: 'auto' }}>
+        <Modal.Body style= maxHeight: '70vh', overflowY: 'auto' >
           {importErrors.length > 0 && (<Alert variant="danger"><strong>Ditemukan {importErrors.length} error:</strong><ul className="mb-0 mt-2">{importErrors.slice(0, 10).map((e, i) => <li key={i}>{e}</li>)}</ul></Alert>)}
           <Alert variant="info"><strong>Total data:</strong> {importPreview.length} baris untuk AP <Badge bg="primary">{userAP}</Badge></Alert>
           <div className="table-responsive">
