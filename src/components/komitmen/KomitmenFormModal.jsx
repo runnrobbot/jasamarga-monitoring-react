@@ -139,7 +139,7 @@ const KomitmenFormModal = ({
         </Modal.Title>
       </Modal.Header>
 
-      <Modal.Body style= maxHeight: '70vh', overflowY: 'auto' >
+      <Modal.Body style={ { maxHeight: '70vh', overflowY: 'auto' } }>
         <Form onSubmit={handleSubmit}>
           <Tabs activeKey={role === 'pic' && !isApprovedByAdmin ? 'komitmen' : undefined} defaultActiveKey="komitmen" className="mb-3" onSelect={(k) => { if (role === 'pic' && !isApprovedByAdmin && k === 'realisasi') return; }}>
 
@@ -399,7 +399,7 @@ const KomitmenFormModal = ({
                       required
                       showMonthDropdown showYearDropdown dropdownMode="select"
                       yearDropdownItemNumber={10} scrollableYearDropdown
-                      popperProps= strategy: 'fixed' 
+                      popperProps={ { strategy: 'fixed' } }
                     />
                   </Form.Group>
                 </Col>
@@ -420,7 +420,7 @@ const KomitmenFormModal = ({
                       required
                       showMonthDropdown showYearDropdown dropdownMode="select"
                       yearDropdownItemNumber={10} scrollableYearDropdown
-                      popperProps= strategy: 'fixed' 
+                      popperProps={ { strategy: 'fixed' } }
                     />
                   </Form.Group>
                 </Col>
@@ -877,7 +877,7 @@ const KomitmenFormModal = ({
                         wrapperClassName="w-100" disabled={isExistingRow}
                         showMonthDropdown showYearDropdown dropdownMode="select"
                         yearDropdownItemNumber={10} scrollableYearDropdown
-                        popperProps= strategy: 'fixed' 
+                        popperProps={ { strategy: 'fixed' } }
                       />
                     </Col>
                     <Col md={2}>
@@ -974,7 +974,7 @@ const KomitmenFormModal = ({
                     },
                   ].map(({ label, value, note, variant }) => (
                     <Col md={4} key={label}>
-                      <Alert variant={variant} className="mb-0" style= borderLeft: '4px solid #28a745' >
+                      <Alert variant={variant} className="mb-0">
                         <strong>{label}:</strong> {value}<br />
                         <small className="text-muted">{note}</small>
                       </Alert>
