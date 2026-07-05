@@ -15,7 +15,7 @@ const MONTHS = [
 ];
 
 /**
- * KomitmenFormModal — shared modal form untuk Admin dan PIC.
+ * KomitmenFormModal - shared modal form untuk Admin dan PIC.
  *
  * Props:
  *  show, onHide, editMode, isAddingNewRealisasi, loading,
@@ -72,7 +72,7 @@ const KomitmenFormModal = ({
   const shouldShowTKDNFields = () => formData.tkdnCheckbox === true;
   const shouldShowImportFields = () => formData.importCheckbox === true;
 
-  // ── Summary calculations ─────────────────────────────────────────────────
+  // Summary calculations
   const calculateSummaryPerPeriode = () => {
     const currentYear = new Date().getFullYear().toString();
     const isMY = formData.jenisPaket === 'Multi Year (MY)';
@@ -122,7 +122,7 @@ const KomitmenFormModal = ({
     return { progress, sisa: formatRupiahInput(sisa.toString()), total: formatRupiahInput(totalRealisasiKeseluruhan.toString()) };
   };
 
-  // ── Helpers for summary alert ────────────────────────────────────────────
+  // Helpers for summary alert
   const totalRencana = rencanaRows.reduce((sum, row) => sum + parseRupiahInput(row.nilaiRencana), 0);
   const refKomitmen = parseRupiahInput(formData.komitmenKeseluruhan) > 0
     ? parseRupiahInput(formData.komitmenKeseluruhan)
@@ -139,11 +139,11 @@ const KomitmenFormModal = ({
         </Modal.Title>
       </Modal.Header>
 
-      <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+      <Modal.Body style={ { maxHeight: '70vh', overflowY: 'auto' } }>
         <Form onSubmit={handleSubmit}>
           <Tabs activeKey={role === 'pic' && !isApprovedByAdmin ? 'komitmen' : undefined} defaultActiveKey="komitmen" className="mb-3" onSelect={(k) => { if (role === 'pic' && !isApprovedByAdmin && k === 'realisasi') return; }}>
 
-            {/* ═══════════════════ TAB KOMITMEN ═══════════════════ */}
+            {/* TAB KOMITMEN */}
             <Tab eventKey="komitmen" title="Komitmen Awal / Informasi Dasar">
               {editMode && (
                 <Alert variant="info" className="mb-3">
@@ -185,7 +185,7 @@ const KomitmenFormModal = ({
                 </Col>
               </Row>
 
-              {/* Nama Pembuat — auto-filled dari akun login */}
+              {/* Nama Pembuat - auto-filled dari akun login */}
               {createdByName && (
                 <Row>
                   <Col md={6}>
@@ -399,7 +399,7 @@ const KomitmenFormModal = ({
                       required
                       showMonthDropdown showYearDropdown dropdownMode="select"
                       yearDropdownItemNumber={10} scrollableYearDropdown
-                      popperProps={{ strategy: 'fixed' }}
+                      popperProps={ { strategy: 'fixed' } }
                     />
                   </Form.Group>
                 </Col>
@@ -420,13 +420,13 @@ const KomitmenFormModal = ({
                       required
                       showMonthDropdown showYearDropdown dropdownMode="select"
                       yearDropdownItemNumber={10} scrollableYearDropdown
-                      popperProps={{ strategy: 'fixed' }}
+                      popperProps={ { strategy: 'fixed' } }
                     />
                   </Form.Group>
                 </Col>
               </Row>
 
-              {/* ── Rencana Realisasi ── */}
+              {/* Rencana Realisasi */}
               <hr className="my-4" />
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <h6 className="fw-bold mb-0">Rencana Realisasi</h6>
@@ -535,14 +535,14 @@ const KomitmenFormModal = ({
                     <strong>Total Rencana Realisasi:</strong> {formatRupiahInput(totalRencana.toString())}
                     {rencanaOverLimit && (
                       <span className="ms-2 fw-bold">
-                        ⚠️ Melebihi {parseRupiahInput(formData.komitmenKeseluruhan) > 0 ? 'Komitmen Keseluruhan' : 'Komitmen Tahun Berjalan'} sebesar {formatRupiahInput((totalRencana - refKomitmen).toString())}! Data tidak dapat disimpan.
+                        Melebihi {parseRupiahInput(formData.komitmenKeseluruhan) > 0 ? 'Komitmen Keseluruhan' : 'Komitmen Tahun Berjalan'} sebesar {formatRupiahInput((totalRencana - refKomitmen).toString())}! Data tidak dapat disimpan.
                       </span>
                     )}
                   </Alert>
                 </Col>
               </Row>
 
-              {/* ── Informasi Keuangan ── */}
+              {/* Informasi Keuangan */}
               <hr />
               <h5 className="mb-3">Informasi Penggunaan Produk</h5>
               <Row className="mb-3">
@@ -674,16 +674,16 @@ const KomitmenFormModal = ({
               </Form.Group>
             </Tab>
 
-            {/* ═══════════════════ TAB REALISASI ═══════════════════ */}
-            <Tab eventKey="realisasi" title={<span>{role === 'pic' && !isApprovedByAdmin ? '🔒 ' : ''}Realisasi</span>} disabled={role === 'pic' && !isApprovedByAdmin}>
+            {/* TAB REALISASI */}
+            <Tab eventKey="realisasi" title={<span>{role === 'pic' && !isApprovedByAdmin ? '(Terkunci) ' : ''}Realisasi</span>} disabled={role === 'pic' && !isApprovedByAdmin}>
 
               {/* Alert: Tab Realisasi terkunci sebelum admin approve */}
               {role === 'pic' && !isApprovedByAdmin && (
                 <Alert variant="warning" className="mt-3 mb-3">
-                  <strong>🔒 Tab Realisasi terkunci</strong><br />
+                  <strong>Tab Realisasi terkunci</strong><br />
                   {!editMode
                     ? 'Data realisasi hanya bisa diisi setelah komitmen disetujui oleh Admin.'
-                    : 'Komitmen ini belum disetujui oleh Admin. Data realisasi baru bisa diisi setelah status menjadi <strong>Approved</strong>.'}
+                    : 'Komitmen ini belum disetujui oleh Admin. Data realisasi baru bisa diisi setelah status menjadi Approved.'}
                   <br /><small className="text-muted">Status saat ini: <strong>{selectedKomitmen?.approvalStatus || 'draft'}</strong></small>
                 </Alert>
               )}
@@ -760,8 +760,8 @@ const KomitmenFormModal = ({
                   <strong>Mode Tambah Realisasi Baru:</strong> Anda sedang menambahkan data realisasi baru.
                   Data realisasi lama tidak akan terhapus.<br />
                   <small className="text-muted">
-                    • Isi Nama Penyedia baru jika berbeda dengan realisasi sebelumnya<br />
-                    • Klik "Cancel" untuk kembali ke mode edit existing
+                    Isi Nama Penyedia baru jika berbeda dengan realisasi sebelumnya.<br />
+                    Klik "Cancel" untuk kembali ke mode edit existing.
                   </small>
                 </Alert>
               )}
@@ -839,7 +839,7 @@ const KomitmenFormModal = ({
                 </Col>
               </Row>
 
-              {/* ── Detail realisasi per periode ── */}
+              {/* Detail realisasi per periode */}
               <hr className="my-4" />
               <h6 className="fw-bold mb-3">Detail Realisasi per Periode</h6>
               <Row className="mb-2 bg-light py-2 border rounded">
@@ -877,7 +877,7 @@ const KomitmenFormModal = ({
                         wrapperClassName="w-100" disabled={isExistingRow}
                         showMonthDropdown showYearDropdown dropdownMode="select"
                         yearDropdownItemNumber={10} scrollableYearDropdown
-                        popperProps={{ strategy: 'fixed' }}
+                        popperProps={ { strategy: 'fixed' } }
                       />
                     </Col>
                     <Col md={2}>
@@ -974,7 +974,7 @@ const KomitmenFormModal = ({
                     },
                   ].map(({ label, value, note, variant }) => (
                     <Col md={4} key={label}>
-                      <Alert variant={variant} className="mb-0" style={{ borderLeft: '4px solid #28a745' }}>
+                      <Alert variant={variant} className="mb-0">
                         <strong>{label}:</strong> {value}<br />
                         <small className="text-muted">{note}</small>
                       </Alert>
@@ -1028,7 +1028,7 @@ const KomitmenFormModal = ({
             </Tab>
           </Tabs>
 
-          {/* ── Form Actions ── */}
+          {/* Form Actions */}
           <div className="d-flex justify-content-end gap-2 mt-3">
             <Button variant="secondary" onClick={onHide}>Batal</Button>
             <Button
