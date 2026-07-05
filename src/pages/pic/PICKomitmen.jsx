@@ -44,30 +44,30 @@ const PICKomitmen = () => {
   const fileInputRef = useRef(null);
   const { user } = useAuth();
 
-  // ── Data state ──────────────────────────────────────────────────────
+  // Data state
   const [komitmenList, setKomitmenList] = useState([]);
   const [filteredList, setFilteredList] = useState([]);
   const [masterAPList, setMasterAPList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userAP, setUserAP] = useState('');
 
-  // ── Schedule state ───────────────────────────────────────────────
+  // Schedule state
   const [scheduleLoading, setScheduleLoading] = useState(true);
   const [scheduleInfo, setScheduleInfo] = useState(null);
   const [scheduleStatus, setScheduleStatus] = useState(null);
   const [scheduleAllowed, setScheduleAllowed] = useState(false);
 
-  // ── UI state ──────────────────────────────────────────────────────
+  // UI state
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
   const [selectedKomitmen, setSelectedKomitmen] = useState(null);
   const [editMode, setEditMode] = useState(false);
 
-  // ── Filter state ────────────────────────────────────────────────
+  // Filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [filterApprovalStatus, setFilterApprovalStatus] = useState('all');
 
-  // ── Import state (via hook) ──────────────────────────
+  // Import state (via hook)
   const {
     importing,
     showImportModal, setShowImportModal,
@@ -81,13 +81,13 @@ const PICKomitmen = () => {
     handleWizardClose,
   } = useImportKomitmen({ user, userAP, masterAPList });
 
-  // ── Revisi state ────────────────────────────────────────────────
+  // Revisi state
   const [showRevisiModal, setShowRevisiModal] = useState(false);
   const [selectedRevisiItem, setSelectedRevisiItem] = useState(null);
   const [revisiNote, setRevisiNote] = useState('');
   const [submittingRevisi, setSubmittingRevisi] = useState(false);
 
-  // ── Form hook ───────────────────────────────────────────────────
+  // Form hook
   const {
     formData, setFormData,
     realisasiRows, setRealisasiRows,
@@ -102,7 +102,7 @@ const PICKomitmen = () => {
     loadKomitmenToForm,
   } = useKomitmenForm({ defaultNamaAP: userAP });
 
-  // ── Lifecycle ───────────────────────────────────────────────────
+  // Lifecycle
   useEffect(() => {
     const fetchUserAP = async () => {
       try {
@@ -189,7 +189,7 @@ const PICKomitmen = () => {
     loadScheduleInfo();
   }, [userAP, masterAPList]);
 
-  // ── Fetch ────────────────────────────────────────────────────────
+  // Fetch
   const fetchMasterAP = async () => {
     try {
       const snapshot = await getDocs(collection(db, 'masterAP'));
@@ -223,7 +223,7 @@ const PICKomitmen = () => {
     setFilteredList(filtered);
   };
 
-  // ── Modal handlers ────────────────────────────────────────────────
+  // Modal handlers
   const handleCloseFormModal = () => {
     setShowFormModal(false);
     setEditMode(false);
@@ -286,7 +286,7 @@ const PICKomitmen = () => {
     toast.info('Mode: Edit Realisasi Existing');
   };
 
-  // ── Submit ───────────────────────────────────────────────────────
+  // Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     const isRejectedResubmit = editMode && (selectedKomitmen?.approvalStatus === 'rejected' || selectedKomitmen?.approvalStatus === 'rejected_gm');
@@ -428,7 +428,7 @@ const PICKomitmen = () => {
     finally { setLoading(false); }
   };
 
-  // ── Export ───────────────────────────────────────────────────────
+  // Export
   const handleExport = () => {
     const dataToExport = filteredList.map(item => ({
       'ID Paket': item.idPaketMonitoring, 'Jenis Paket': item.jenisPaket, 'Nama AP': item.namaAP,
@@ -442,9 +442,9 @@ const PICKomitmen = () => {
     toast.success('Data berhasil diexport');
   };
 
-  // ── Import ───────────────────────────────────────────────────────
+  // Import
 
-  // ── Revisi ───────────────────────────────────────────────────────
+  // Revisi
   const handleOpenRevisi = (item) => { setSelectedRevisiItem(item); setRevisiNote(''); setShowRevisiModal(true); };
 
   const handleSubmitRevisi = async () => {
@@ -459,7 +459,7 @@ const PICKomitmen = () => {
         // Tarik submission yang belum diproses GM
         revisiData = { approvalStatus: 'rejected_gm', approvalNote: `[Ditarik PIC] ${revisiNote.trim()}`, rejectedBy: user?.email || '', rejectedAt: new Date(), revisiNote: revisiNote.trim(), revisiRequestedBy: user?.email || '', revisiRequestedAt: new Date(), updatedAt: new Date(), updatedBy: user?.email || '' };
       } else {
-        // Approved — request revisi ke admin
+        // Approved - request revisi ke admin
         revisiData = { approvalStatus: 'revision_requested', revisiNote: revisiNote.trim(), revisiRequestedBy: user?.email || '', revisiRequestedAt: new Date(), updatedAt: new Date(), updatedBy: user?.email || '' };
       }
       await updateDoc(doc(db, 'komitmen', selectedRevisiItem.id), revisiData);
@@ -475,8 +475,8 @@ const PICKomitmen = () => {
     if (item.status === 'selesai') return <Badge bg="dark">Selesai</Badge>;
     switch (item.approvalStatus) {
       case 'approved': return <Badge bg="success">Approved</Badge>;
-      case 'rejected': return <Badge bg="danger">Rejected — Perlu Revisi</Badge>;
-      case 'rejected_gm': return <Badge bg="danger">Ditolak GM — Perlu Revisi</Badge>;
+      case 'rejected': return <Badge bg="danger">Rejected - Perlu Revisi</Badge>;
+      case 'rejected_gm': return <Badge bg="danger">Ditolak GM - Perlu Revisi</Badge>;
       case 'pending_gm': return <Badge bg="info" className="text-dark">Menunggu Review GM</Badge>;
       case 'pending_admin': return <Badge bg="warning" className="text-dark">Menunggu Approval Admin</Badge>;
       case 'revision_requested': return <Badge bg="warning" className="text-dark">Request Revisi</Badge>;
@@ -495,7 +495,7 @@ const PICKomitmen = () => {
     return (item.approvalStatus === 'pending_gm' || item.approvalStatus === 'approved') && item.status !== 'selesai';
   };
 
-  // ════════════════════════════════════ RENDER ═══════════════════════════════════
+  // RENDER
   return (
     <>
       <NavigationBar />
@@ -508,8 +508,8 @@ const PICKomitmen = () => {
           {!scheduleLoading && scheduleStatus && (
             <Alert variant={scheduleAllowed ? scheduleStatus.color : 'warning'} className="mb-3">
               {scheduleAllowed
-                ? <><strong>Periode Input Aktif</strong> — {scheduleStatus.message}</>
-                : <><strong>Periode Input Tidak Aktif</strong> — {scheduleStatus.message}. Penambahan komitmen baru tidak diizinkan.</>
+                ? <><strong>Periode Input Aktif</strong> - {scheduleStatus.message}</>
+                : <><strong>Periode Input Tidak Aktif</strong> - {scheduleStatus.message}. Penambahan komitmen baru tidak diizinkan.</>
               }
             </Alert>
           )}
@@ -520,7 +520,7 @@ const PICKomitmen = () => {
                 <div>
                   <h2 className="fw-bold mb-1">Monitoring Komitmen</h2>
                   <p className="text-muted mb-0">
-                    Kelola data komitmen dan realisasi — <Badge bg="info">AP: {userAP}</Badge>
+                    Kelola data komitmen dan realisasi - <Badge bg="info">AP: {userAP}</Badge>
                   </p>
                 </div>
                 <div className="d-flex gap-2">
@@ -613,7 +613,7 @@ const PICKomitmen = () => {
         </Container>
       </div>
 
-      {/* ── MODAL IMPORT ── */}
+      {/* MODAL IMPORT */}
       <Modal show={showImportModal} onHide={() => setShowImportModal(false)} size="xl" centered>
         <Modal.Header closeButton><Modal.Title>Preview Import Data - AP: <Badge bg="primary">{userAP}</Badge></Modal.Title></Modal.Header>
         <Modal.Body style= maxHeight: '70vh', overflowY: 'auto' >
@@ -635,7 +635,7 @@ const PICKomitmen = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* ── MODAL FORM (shared) ── */}
+      {/* MODAL FORM (shared) */}
       <KomitmenFormModal
         show={showFormModal} onHide={handleCloseFormModal} editMode={editMode}
         isAddingNewRealisasi={isAddingNewRealisasi} loading={loading}
@@ -652,10 +652,10 @@ const PICKomitmen = () => {
         selectedKomitmen={selectedKomitmen}
       />
 
-      {/* ── MODAL DETAIL (shared) ── */}
+      {/* MODAL DETAIL (shared) */}
       <KomitmenDetailModal show={showDetailModal} onHide={() => setShowDetailModal(false)} selectedKomitmen={selectedKomitmen} />
 
-      {/* ── MODAL REQUEST REVISI ── */}
+      {/* MODAL REQUEST REVISI */}
       <Modal show={showRevisiModal} onHide={() => setShowRevisiModal(false)} centered>
         <Modal.Header closeButton className="bg-warning">
           <Modal.Title><FaUndo className="me-2" />{selectedRevisiItem?.approvalStatus === 'pending_gm' ? 'Tarik Submission' : 'Request Revisi ke Admin'}</Modal.Title>
